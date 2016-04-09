@@ -6,7 +6,8 @@ def _read(file_name):
   vocab = set()
   corpus = list()
   for sentence in f:
-    sentence_words = sentence.strip(' \n').split(' ')
+    # TODO: Get word roots/lemmas. Should be better
+    sentence_words = map(lambda x: x.lower(), sentence.strip(' \n').split(' '))
     corpus.append(sentence_words)
     for word in sentence_words:
       vocab.add(word)
