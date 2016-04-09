@@ -19,7 +19,6 @@ class IBM1:
     self.thetas = self.__random_initialize_thetas()
     print 'initialized thetas', time.time() - start
 
-
   def __init_vocab(self, set_vocab, add_null_word):
     vocab = dict()
     i = 1 if add_null_word else 0
@@ -30,31 +29,26 @@ class IBM1:
 
   def __random_initialize_thetas(self):
     # add 1 for the null word
-    thetas = np.zeros([len(self.f_vocab),1+len(self.e_vocab)],dtype='float16')
-    thetas.fill(0.5)
-#    for f_word in range(thetas.shape[0]):
-#      start = time.time()
-#      thetas_f = thetas[f_word]
-#      for e_word in range(thetas.shape[1]):
-#        thetas_f[e_word] = np.random.random(1)[0]
-#      print f_word, time.time()-start
+    thetas = np.random.random([len(self.f_vocab),1+len(self.e_vocab)]).astype(np.float16)
     return thetas
 
+  # I tried putting maps and getting rid of loops
+  # It actually became 10x slower...
+  # My guess is it was because of the overhead of creating lambda functions objects
   def __e_step(self, english, french):
     #a default dict of default dicts of floats
-    joint_expectations = np.zeros([1+len(self.e_vocab),len(self.f_vocab)],dtype='float16')
-    expectations = np.zeros(1+len(self.e_vocab),dtype='float16')
+    joint_expectations = np.zeros([1+len(self.e_vocab),len(self.f_vocab)],dtype=np.float16)
+    expectations = np.zeros(1+len(self.e_vocab),dtype=np.float16)
     for sentence_no in range(len(english)):
       e_sentence = english[sentence_no]
       f_sentence = french[sentence_no]
       for f_word in f_sentence:
         f_index = self.f_vocab[f_word]
         theta_f_es = self.thetas[f_index]
-        
+        # Compute "normalizing constant"
         theta_f = theta_f_es[self.null_word]
         for e_word in e_sentence:
           theta_f += theta_f_es[self.e_vocab[e_word]]
-        
         # null word
         update_value = theta_f_es[self.null_word] / theta_f
         joint_expectations[self.null_word][f_index] += update_value
@@ -65,7 +59,6 @@ class IBM1:
           update_value = theta_f_es[e_index] / theta_f
           joint_expectations[e_index][f_index] += update_value
           expectations[e_index] += update_value
-          
     return joint_expectations, expectations
 
   def __m_step(self, joint_expectations, expectations):
@@ -95,14 +88,15 @@ class IBM1:
       sentence_log_likelihood = 0
       for f_word in f_sentence:
         theta_f_es = self.thetas[self.f_vocab[f_word]]
-        # null word
-        max_theta = np.log(theta_f_es[self.null_word])
-        # normal words
-        for e_word in e_sentence:
-          e_index = self.e_vocab[e_word]
-          if max_theta < np.log(theta_f_es[e_index]):
-            max_theta = np.log(theta_f_es[e_index])
-        sentence_log_likelihood += max_theta
+        # Get probabilities for the words in the english sentence
+        probabilities = map(lambda e_word: theta_f_es[self.e_vocab[e_word]], e_sentence)
+        # Add null word
+        probabilities.append(theta_f_es[self.null_word])
+        # max seems to be significantly faster for lists than np.amax
+        # or at least for lists of size <= 50
+        max_probability = max(probabilities)
+        assert(max_probability > 0)
+        sentence_log_likelihood += np.log(max_probability)
       log_likelihood += sentence_log_likelihood
     return log_likelihood
 
@@ -124,10 +118,11 @@ class IBM1:
     best_thetas = self.thetas
     best_log_likelihood = float('-inf')
     for i in range(iterations):
-      start = time.time()
+      i_start = time.time()
 
       #possibly split the data into train and validation data for cross-validation?
       #training, validation = self.__split_data(english, french) #training, validation - arrays of indices of sentences
+      start = time.time()
       self.__iteration(english, french)
       print 'iteration finished', time.time() - start
       
@@ -140,7 +135,7 @@ class IBM1:
         best_thetas = self.thetas
         best_log_likelihood = log_likelihood
 
-      print 'Iteration', i, 'Time:',time.time() - start,'s','Log-likelihood',log_likelihood
+      print 'Iteration', i, 'Time:',time.time() - i_start,'s','Log-likelihood',log_likelihood
     
     #recover best thetas
     self.thetas = best_thetas
