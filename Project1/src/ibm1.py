@@ -91,13 +91,15 @@ class IBM1:
     self.__m_step(joint_expectations, expectations)
     print 'M',time.time()-start
 
-  def __compute_log_likelihood(self, english, french):
+  def __compute_log_like_and_alignments(self, english, french):
     log_likelihood = 0
+    alignments = []
     for sentence_no in range(len(english)):
       e_sentence = english[sentence_no]
       f_sentence = french[sentence_no]
       sentence_log_likelihood = 0
-      for f_word in f_sentence:
+      s_alignments = set()
+      for j, f_word in enumerate(f_sentence):
         theta_f_es = self.thetas[self.f_vocab[f_word]]
         # Get probabilities for the words in the english sentence
         probabilities = map(lambda e_word: theta_f_es[self.e_vocab[e_word]], e_sentence)
@@ -106,10 +108,32 @@ class IBM1:
         # max seems to be significantly faster for lists than np.amax
         # or at least for lists of size <= 50
         max_probability = max(probabilities)
+        alignment = probabilities.index(max_probability)
+        # ignore null word
+        if alignment < len(e_sentence):
+          # let indexing start from 1 (at least until we get anotated data)
+          s_alignments.add( (j+1, alignment+1) )
         assert(max_probability > 0)
         sentence_log_likelihood += np.log(max_probability)
       log_likelihood += sentence_log_likelihood
-    return log_likelihood
+      alignments.append(s_alignments)
+    return log_likelihood, alignments
+
+  def __compute_AER(self, alignments, sure, possible):
+    assert(len(alignments) == len(sure))
+    assert(len(alignments) == len(possible))
+    aer = 0
+    for sentence_no in range(len(alignments)):
+      s_alignments  = alignments[sentence_no]
+      s_sure        = sure[sentence_no]
+      s_possible    = possible[sentence_no]
+      # just in the case of sentences with no alignments
+      if 0 == len(s_alignments) + len(s_sure):
+        continue
+      correct_sure = len(s_alignments.intersection(s_sure))
+      correct_possible = len(s_alignments.intersection(s_possible))
+      aer += 1 - float(correct_sure + correct_possible) / float(len(s_alignments) + len(s_sure))
+    return aer
 
   def __split_data(self, english, french):
     sentence_count = len(english)
@@ -125,6 +149,7 @@ class IBM1:
   # List of sentences
   # sentence - list of words
   def train(self, english, french, iterations):
+    assert(len(english) == len(french))
     # Initialize thetas
     start = time.time()
     self.thetas = self.__random_initialize_thetas(english, french)
@@ -145,15 +170,20 @@ class IBM1:
       print 'iteration finished', time.time() - start
       
       start = time.time()
-      log_likelihood = self.__compute_log_likelihood(english, french)
+      log_likelihood, alignments = self.__compute_log_like_and_alignments(english, french)
       print 'computed log-likelihood', time.time() - start
+
+      start = time.time()
+      # testing with the same alignments until we get anotated data
+      aer = self.__compute_AER(alignments, alignments, alignments)
+      print 'computed AER', time.time() - start
       
       start = time.time()
       if best_log_likelihood < log_likelihood:
         best_thetas = self.thetas
         best_log_likelihood = log_likelihood
 
-      print 'Iteration', i, 'Time:',time.time() - i_start,'s','Log-likelihood',log_likelihood
+      print 'Iteration', i, 'Time:',time.time() - i_start,'s','Log-likelihood',log_likelihood,'AER',aer
     
     #recover best thetas
     self.thetas = best_thetas
