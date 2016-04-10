@@ -5,15 +5,10 @@ from nltk.stem import PorterStemmer
 def __preprocess(sentence, stemmer):
   # Remove whitespace at the end of the sentence (line)
   sentence = re.sub('[ \t\n]*$','',sentence)
-  
-  # This is bad, but lucklily data is already tokenized
-  # Remove anything that is not 
-  # sentence = re.sub('[^ \t0-9A-Za-z]','',sentence)
-  
   # Convert to lower and split by whitespace
   words = sentence.lower().split()
-  # Stem words
-  words = map(lambda word: stemmer.stem(word), words)
+  # Stem words (not sure if we should do that)
+  #words = map(lambda word: stemmer.stem(word), words)
   return words
 
 #1 underscore means you are not enouraged to use this outside of this module
