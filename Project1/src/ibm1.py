@@ -1,7 +1,13 @@
 import numpy as np
+import random
 import gc
+from collections import defaultdict
 
 import time
+
+# Needed for the nested default dictionaries to be serializable
+def default_dict():
+  return defaultdict(float)
 
 class IBM1:
 
@@ -15,9 +21,6 @@ class IBM1:
     start = time.time()
     self.f_vocab = self.__init_vocab(f_vocab,False)
     print 'initialized f_vocab', time.time() - start
-    start = time.time()
-    self.thetas = self.__random_initialize_thetas()
-    print 'initialized thetas', time.time() - start
 
   def __init_vocab(self, set_vocab, add_null_word):
     vocab = dict()
@@ -27,9 +30,18 @@ class IBM1:
       i += 1
     return vocab
 
-  def __random_initialize_thetas(self):
+  def __random_initialize_thetas(self, english, french):
     # add 1 for the null word
-    thetas = np.random.random([len(self.f_vocab),1+len(self.e_vocab)]).astype(np.float16)
+    thetas = defaultdict(default_dict)
+    for sentence in range(len(english)):
+      e_sentence = english[sentence]
+      f_sentence = french[sentence]
+      for f_word in f_sentence:
+        thetas_f = thetas[self.f_vocab[f_word]]
+        # null word
+        thetas_f[self.null_word] = random.random()
+        for e_word in e_sentence:
+          thetas_f[self.e_vocab[e_word]] = random.random()
     return thetas
 
   # I tried putting maps and getting rid of loops
@@ -37,8 +49,8 @@ class IBM1:
   # My guess is it was because of the overhead of creating lambda functions objects
   def __e_step(self, english, french):
     #a default dict of default dicts of floats
-    joint_expectations = np.zeros([1+len(self.e_vocab),len(self.f_vocab)],dtype=np.float16)
-    expectations = np.zeros(1+len(self.e_vocab),dtype=np.float16)
+    joint_expectations = defaultdict(default_dict)
+    expectations = defaultdict(float)
     for sentence_no in range(len(english)):
       e_sentence = english[sentence_no]
       f_sentence = french[sentence_no]
@@ -62,12 +74,11 @@ class IBM1:
     return joint_expectations, expectations
 
   def __m_step(self, joint_expectations, expectations):
-    self.thetas = self.thetas.T
-    for e in range(self.thetas.shape[0]):
+    for e in expectations:
       expectation_e = expectations[e]
       joint_expectations_e = joint_expectations[e]
-      self.thetas[e] = joint_expectations_e / expectation_e
-    self.thetas = self.thetas.T
+      for f in joint_expectations_e:
+        self.thetas[f][e] = joint_expectations_e[f] / expectation_e
 
   def __iteration(self, english, french):
     gc.collect()
@@ -114,9 +125,16 @@ class IBM1:
   # List of sentences
   # sentence - list of words
   def train(self, english, french, iterations):
+    # Initialize thetas
+    start = time.time()
+    self.thetas = self.__random_initialize_thetas(english, french)
+    print 'initialized thetas', time.time() - start
+
     # save best thetas after every iteration
     best_thetas = self.thetas
     best_log_likelihood = float('-inf')
+
+    # Run EM
     for i in range(iterations):
       i_start = time.time()
 
