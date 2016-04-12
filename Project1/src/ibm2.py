@@ -7,119 +7,67 @@ from ibm import IBM
 import time
 
 # Needed for the nested default dictionaries to be serializable
-def default_dict():
+def default_dict1():
   return defaultdict(float)
+
+def default_dict2():
+  return defaultdict(default_dict1)
+
+def default_dict3():
+  return defaultdict(default_dict2)
 
 class IBM2(IBM):
 
-  def __random_initialize_pars(self, english, french):
-    thetas = defaultdict(default_dict)
-    qs = defaultdict(default_dict)
-    for sentence in range(len(english)):
-      e_sentence = english[sentence]
-      f_sentence = french[sentence]
-      for f_word in f_sentence:
-        thetas_f = thetas[self.f_vocab[f_word]]
-        qs_f = qs[self.f_vocav[f_word]]
-        # null word
-        thetas_f[self.null_word] = random.random()
-        qs_f = qs[self.null_word] = random.random()
-        for e_word in e_sentence:
-          thetas_f[self.e_vocab[e_word]] = random.random()
-          qs_f[self.e_vocab[e_word]] = random.random()
-    return thetas, qs
+  def _define_parameters(self):
+    # make an iterable of
+    # 0. translation probabilities
+    # 1. alignment probabilities
+    return [default_dict2(),defaultdict(default_dict3)]
 
+  def _get_parameters(self, params, e_sentence_len, f_sentence_len, f_sentence_index, f_word_id):
+    # translation probabilities are in param[0]
+    # alignment probabilities are in param[1]
+    # get the ones for the given french word ID and
+    # Return them in an iterable
+    return [params[0][f_word_id], params[1][e_sentence_len][f_sentence_len][f_sentence_index]]
 
-  # I tried putting maps and getting rid of loops
-  # It actually became 10x slower...
-  # My guess is it was because of the overhead of creating lambda functions objects
-  def __e_step(self, english, french):
-    #a default dict of default dicts of floats
-    joint_expectations_t = defaultdict(default_dict)
-    expectations_t = defaultdict(float)
-    joint_expectations_q = defaultdict(default_dict)
-    expectations_q = defaultdict(float)
-    for sentence_no in range(len(english)):
-      e_sentence = english[sentence_no]
-      f_sentence = french[sentence_no]
-      for f_word in f_sentence:
-        f_index = self.f_vocab[f_word]
-        theta_f_es = self.thetas[f_index]
-        qs_f_es = self.qs[f_index] # i used q as the alignment parameter, following collins
+  def _random_initialize_parameter(self, params, e_sentence_index, e_word_id):
+    # translation probabilities
+    params[0][e_word_id] = random.random()
+    # alignment probabilities
+    params[1][e_sentence_index] = random.random()
 
-        probabilities = [theta_f_es[self.null_word] * q_f_es[self.null_word]]
-        for e_word in e_sentence:
-          probabilities.append(theta_f_es[self.e_vocab[e_word]] * q_f_es[self.e_vocab[e_word]])
-        # Compute "normalizing constant"
-        norm_const = sum(probabilities)
+  def _define_expectations(self):
+    # Return tuple of joint expectations of translations and
+    # expectations for translations of english words
+    # joint transl. expectations, transl. expectations, joint align. expectations, align. expectations
+    return [default_dict2(), default_dict1(), defaultdict(default_dict3), default_dict3()]
 
-        # null word
-        update_value = (theta_f_es[self.null_word] * q_f_es[self.null_word]) / (norm_const)
-        joint_expectations_t[self.null_word][f_index] += update_value
-        expectations_t[self.null_word] += update_value
-        joint_expectations_q[self.null_word][f_index] += update_value
-        expectations_q[self.null_word] += update_value
-        # normal words
-        for i, e_word in enumerate(e_sentence):
-          e_index = self.e_vocab[e_word]
-          update_value = probabilities[i+1] / norm_const
-          joint_expectations_t[e_index][f_index] += update_value
-          expectations_t[e_index] += update_value
-          joint_expectations_q[e_index][f_index] += update_value
-          expectations_q[e_index] += update_value
+  def _conditional_probabilities(self, params_f_es, e_sentence):
+    # Probability given the NULL WORD is LAST
+    probs = map(lambda (i, e_word): params_f_es[0][self.e_vocab[e_word]] * params_f_es[1][i], enumerate(e_sentence))
+    # add null word at back
+    probs.append(params_f_es[0][self.null_word] * params_f_es[1][self.null_word])
+    return probs
 
-    return joint_expectations_t, expectations_t, joint_expectations_q, expectations_q
+  def _update_expectations(self, expectations, e_len, i, e_word_id, f_len, j, f_word_id, update_value):
+    # 0 - joint transl. expectations on e first and then f
+    expectations[0][e_word_id][f_word_id] += update_value
+    # 1 - transl. expectations for the english words only
+    expectations[1][e_word_id] += update_value
+    # 2 - joint align. expectations on e first and then f
+    expectations[2][e_len][f_len][i][j] += update_value
+    # 3 - align. expectations for the english words only
+    expectations[3][e_len][f_len][i] += update_value
 
-  def __m_step(self, joint_expectations_t, expectations_t, joint_expectations_e, expectations_e):
-    for e in expectations_t:
-      expectation_e_t = expectations_t[e]
-      joint_expectations_e_t = joint_expectations_t[e]
-      for f in joint_expectations_e_t:
-        self.thetas[f][e] = joint_expectations_e_t[f] / expectation_e_t
-
-    for e in expectations_q:
-      expectation_e_q = expectations_q[e]
-      joint_expectations_e_q = joint_expectations_q[e]
-      for f in joint_expectations_e_q:
-        self.qs[f][e] = joint_expectations_e_q[f] / expectation_e_q
-
-  def __compute_log_like_and_alignments(self, english, french):
-    log_likelihood = 0
-    alignments = []
-    for sentence_no in range(len(english)):
-      e_sentence = english[sentence_no]
-      f_sentence = french[sentence_no]
-      sentence_log_likelihood = 0
-      s_alignments = set()
-      for j, f_word in enumerate(f_sentence):
-        theta_f_es = self.thetas[self.f_vocab[f_word]]
-        qs_f_es = self.qs[self.f_vocab[f_word]]
-        # Get probabilities for the words in the english sentence
-        probabilities = map(lambda e_word: theta_f_es[self.e_vocab[e_word]] * qs_f_es[self.e_vocab[e_word]], e_sentence)
-        # Add null word
-        probabilities.append(theta_f_es[self.null_word] * qs_f_es[self.null_word])
-        # max seems to be significantly faster for lists than np.amax
-        # or at least for lists of size <= 50
-        max_probability = max(probabilities)
-        alignment = probabilities.index(max_probability)
-        # ignore null word
-        if alignment < len(e_sentence):
-          # let indexing start from 1 (at least until we get anotated data)
-          s_alignments.add( (j+1, alignment+1) )
-        assert(max_probability > 0)
-        sentence_log_likelihood += math.log(max_probability)
-      log_likelihood += sentence_log_likelihood
-      alignments.append(s_alignments)
-    return log_likelihood, alignments
-    
-  def __iteration(self, english, french):
-    gc.collect()
-    # E-step
-    start = time.time()
-    joint_expectations_t, expectations_t, joint_expectations_q, expectations_q = self.__e_step(english, french)
-    print 'E',time.time()-start
-    # M-step
-    start = time.time()
-    self.__m_step(joint_expectations_t, expectations_t, joint_expectations_q, expectations_q)
-    print 'M',time.time()-start
+  def _m_step(self, expectations):
+    self._update_parameters(self.params[0], expectations[0], expectations[1])
+    joint = expectations[2]
+    marginal = expectations[3]
+    for e_len in joint:
+      joint_e = joint[e_len]
+      marginal_e = marginal[e_len]
+      params_e = self.params[1][e_len]
+      for f_len in joint_e:
+        self._update_parameters(params_e[f_len], joint_e[f_len], marginal_e[f_len])
 
