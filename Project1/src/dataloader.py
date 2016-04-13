@@ -27,7 +27,7 @@ def _print_corpus(corpus):
   for sentence in corpus:
     print sentence
 
-def read_data(english_file_name, french_file_name):
+def read_train_data(english_file_name, french_file_name):
   english, e_vocab = _read(english_file_name)
   french, f_vocab = _read(french_file_name)
   
@@ -35,4 +35,36 @@ def read_data(english_file_name, french_file_name):
 #  _print_corpus(french)
   
   return english, french, e_vocab, f_vocab
-  
+
+def _read_alignments(alignment_file_name):
+  alignment_file = open(alignment_file_name, 'r')
+  sure_alignments = []
+  prob_alignments = []
+  last_sentence = -1
+  s_sure_alignments = set()
+  s_prob_alignments = set()
+  for alignment in alignment_file:
+    #0001 1 1 S
+    tokens = alignment.strip('\n').split()
+    sentence_no = int(tokens[0])
+    e = int(tokens[1])
+    f = int(tokens[2])
+    if sentence_no != last_sentence and last_sentence != -1:
+      sure_alignments.append(s_sure_alignments)
+      s_sure_alignments = set()
+      prob_alignments.append(s_prob_alignments)
+      s_prob_alignments = set()
+    if 's' == tokens[3].lower():
+      s_sure_alignments.add( (e,f) )
+    else:
+      s_prob_alignments.add( (e,f) )
+    last_sentence = sentence_no
+  sure_alignments.append(s_sure_alignments)
+  prob_alignments.append(s_prob_alignments)
+  return sure_alignments, prob_alignments
+
+def read_test_data(english_file_name, french_file_name, alignment_file_name):
+  english, _ = _read(english_file_name)
+  french, _ = _read(french_file_name)
+  sure, probable = _read_alignments(alignment_file_name)
+  return english, french, sure, probable

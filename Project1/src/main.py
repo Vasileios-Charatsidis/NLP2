@@ -29,19 +29,24 @@ def _create_model(model_type, e_vocab, f_vocab):
 #TODO think of a more sensible name for this script
 
 if __name__ == '__main__':
-  if len(sys.argv) < 5:
-    print 'Usage: python main.py model_type english_file french_file iterations'
+  if len(sys.argv) < 8:
+    print 'Usage: python main.py model_type train_english train_french test_english test_french alignments iterations'
     sys.exit()
   
   model_type = sys.argv[1]
-  english_fname = sys.argv[2]
-  french_fname = sys.argv[3]
-  iterations = int(sys.argv[4])
+  train_english_fname = sys.argv[2]
+  train_french_fname = sys.argv[3]
+  test_english_fname = sys.argv[4]
+  test_french_fname = sys.argv[5]
+  alignments_fname = sys.argv[6]
+  iterations = int(sys.argv[7])
   
   # read data
   start = time.time()
-  english, french, e_vocab, f_vocab = dl.read_data(english_fname, french_fname)
-  del english_fname, french_fname
+  english, french, e_vocab, f_vocab = dl.read_train_data(train_english_fname, train_french_fname)
+  test_data = dl.read_test_data(test_english_fname, test_french_fname, alignments_fname)
+  del train_english_fname, train_french_fname
+  del test_english_fname, test_french_fname
   gc.collect()
   
   print 'data read', time.time() - start
@@ -56,7 +61,7 @@ if __name__ == '__main__':
   
   # train model
   print 'start training'
-  model.train(english, french, iterations)
+  model.train(english, french, iterations, test_data)
   print 'finished training'
   sys.stdout.flush()
 

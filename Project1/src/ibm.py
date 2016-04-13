@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import math
 import gc
@@ -117,16 +118,14 @@ class IBM:
     self._m_step(expectations)
     print 'M',time.time()-start
 
-  def _compute_log_like_and_alignments(self, english, french):
+  def _compute_log_likelihood(self, english, french):
     log_likelihood = 0
-    alignments = []
     for sentence_no in range(len(english)):
       e_sentence = english[sentence_no]
       f_sentence = french[sentence_no]
       e_len = len(e_sentence)
       f_len = len(f_sentence)
       sentence_log_likelihood = 0
-      s_alignments = set()
       for j, f_word in enumerate(f_sentence):
         f_word_id = self.f_vocab[f_word]
         params_f_es = self._get_parameters(self.params, e_len, f_len, j, f_word_id)
@@ -134,16 +133,10 @@ class IBM:
         # max seems to be significantly faster for lists than np.amax
         # or at least for lists of size <= 50
         max_probability = max(probabilities)
-        alignment = probabilities.index(max_probability)
-        # ignore null word
-        if alignment < len(e_sentence):
-          # let indexing start from 1 (at least until we get anotated data)
-          s_alignments.add( (j+1, alignment+1) )
         assert(max_probability > 0)
         sentence_log_likelihood += math.log(max_probability)
       log_likelihood += sentence_log_likelihood
-      alignments.append(s_alignments)
-    return log_likelihood, alignments
+    return log_likelihood
 
   def _compute_AER(self, alignments, sure, possible):
     assert(len(alignments) == len(sure))
@@ -175,7 +168,7 @@ class IBM:
   # List of sentences
   # sentence - list of words
   # ibm1 - path for file with serialized ibm1
-  def train(self, english, french, iterations, init_type = 'random', ibm1 = ''):
+  def train(self, english, french, iterations, test_data, init_type = 'random', ibm1 = ''):
     assert(len(english) == len(french))
     # Initialize params
     start = time.time()
@@ -197,16 +190,21 @@ class IBM:
       self._iteration(english, french)
       print 'iteration finished', time.time() - start
       sys.stdout.flush()
-      
+
       start = time.time()
-      log_likelihood, alignments = self._compute_log_like_and_alignments(english, french)
+      log_likelihood = self._compute_log_likelihood(english, french)
       print 'computed log-likelihood', time.time() - start
 
       start = time.time()
+      # get alignments for test data
+      alignments = self.get_alignments(test_data[0], test_data[1])
+      print 'got alignments', time.time() - start
+
+      start = time.time()
       # testing with the same alignments until we get anotated data
-      aer = self._compute_AER(alignments, alignments, alignments)
+      aer = self._compute_AER(alignments, test_data[2], test_data[3])
       print 'computed AER', time.time() - start
-      
+
       start = time.time()
       if best_log_likelihood < log_likelihood:
         best_params = self.params

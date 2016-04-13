@@ -129,3 +129,39 @@ class IBM2(IBM):
       for f_len in joint_e:
         self._update_parameters(params_e[f_len], joint_e[f_len], marginal_e[f_len])
 
+  def get_alignments(self, english, french):
+    alignments = []
+    for sentence_no in range(len(english)):
+      e_sentence = english[sentence_no]
+      f_sentence = french[sentence_no]
+      e_len = len(e_sentence)
+      f_len = len(f_sentence)
+      s_alignments = set()
+      for j, f_word in enumerate(f_sentence):
+        probabilities = []
+        if f_word in self.f_vocab:
+          f_word_id = self.f_vocab[f_word]
+          params_f_es = self._get_parameters(self.params, e_len, f_len, j, f_word_id)
+          # Compute conditional probabilities
+          for i, e_word in enumerate(e_sentence):
+            if e_word in self.e_vocab:
+              probabilities.append(params_f_es[0][self.e_vocab[e_word]] * params_f_es[1][i+1])
+            else:
+              probabilities.append(1e-6 * params_f_es[1][i+1])
+          probabilities.append(params_f_es[0][self.null_word] * params_f_es[1][self.null_word])
+        else:
+          # Use only alignment probabilitites as we do not have translation ones
+          params_f_es = self.params[1][e_len][f_len][j]
+          # Compute conditional probabilities
+          probabilities = map(lambda (i,_): params_f_es[i+1], enumerate(e_sentence))
+          probabilities.append(params_f_es[self.null_word])
+        # max seems to be significantly faster for lists than np.amax
+        # or at least for lists of size <= 50
+        max_probability = max(probabilities)
+        alignment = probabilities.index(max_probability)
+        # ignore null word
+        if alignment < len(e_sentence):
+          # let indexing start from 1 (at least until we get anotated data)
+          s_alignments.add( (j+1, alignment+1) )
+      alignments.append(s_alignments)
+    return alignments

@@ -50,3 +50,31 @@ class IBM1(IBM):
   def _m_step(self, expectations):
     self._update_parameters(self.params, expectations[0], expectations[1])
 
+  def get_alignments(self, english, french):
+    alignments = []
+    for sentence_no in range(len(english)):
+      e_sentence = english[sentence_no]
+      f_sentence = french[sentence_no]
+      e_len = len(e_sentence)
+      f_len = len(f_sentence)
+      s_alignments = set()
+      for j, f_word in enumerate(f_sentence):
+        if f_word not in self.f_vocab:
+          continue
+        f_word_id = self.f_vocab[f_word]
+        params_f_es = self._get_parameters(self.params, e_len, f_len, j, f_word_id)
+        # Compute conditional probabilities
+        probabilities = map(lambda e_word: params_f_es[self.e_vocab[e_word]] if e_word in self.e_vocab else 1e-6, e_sentence)
+        # add null word at back
+        probabilities.append(params_f_es[self.null_word])
+        # max seems to be significantly faster for lists than np.amax
+        # or at least for lists of size <= 50
+        max_probability = max(probabilities)
+        alignment = probabilities.index(max_probability)
+        # ignore null word
+        if alignment < len(e_sentence):
+          # let indexing start from 1 (at least until we get anotated data)
+          s_alignments.add( (j+1, alignment+1) )
+      alignments.append(s_alignments)
+    return alignments
+
