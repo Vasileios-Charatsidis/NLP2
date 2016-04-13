@@ -55,8 +55,10 @@ class IBM:
     for sentence in range(len(english)):
       e_sentence = english[sentence]
       f_sentence = french[sentence]
+      e_len = len(e_sentence)
+      f_len = len(f_sentence)
       for j, f_word in enumerate(f_sentence):
-        params_f = self._get_parameters(params, len(e_sentence), len(f_sentence), j, self.f_vocab[f_word])
+        params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
         # null word
         self._random_initialize_parameter(params_f, self.null_word, self.null_word)
         for i, e_word in enumerate(e_sentence):

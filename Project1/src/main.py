@@ -46,7 +46,6 @@ if __name__ == '__main__':
   
   # create a model object
   model = _create_modelibm1(model_type, e_vocab, f_vocab)
-  print isinstance(model, ibm1)
   del e_vocab, f_vocab
   gc.collect()
   
