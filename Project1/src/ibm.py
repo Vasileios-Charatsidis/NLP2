@@ -50,6 +50,10 @@ class IBM:
     # Update all possible expectations for f_word_id and e_word_id
     return
 
+  def _initialize_parameters(self, english, french, init_type, ibm1):
+    # Initializes parameters
+    return
+
   def _random_initialize_parameters(self, english, french):
     params = self._define_parameters()
     for sentence in range(len(english)):
@@ -169,11 +173,12 @@ class IBM:
 
   # List of sentences
   # sentence - list of words
-  def train(self, english, french, iterations):
+  # ibm1 - path for file with serialized ibm1
+  def train(self, english, french, iterations, init_type = 'random', ibm1 = ''):
     assert(len(english) == len(french))
     # Initialize params
     start = time.time()
-    self.params = self._random_initialize_parameters(english, french)
+    self.params = self._initialize_parameters(english, french, init_type, ibm1)
     print 'initialized params', time.time() - start
 
     # save best params after every iteration

@@ -25,6 +25,9 @@ class IBM1(IBM):
   def _random_initialize_parameter(self, params, e_sentence_index, e_word_id):
     params[e_word_id] = random.random()
 
+  def _initialize_parameters(self, english, french, init_type, ibm1):
+    return self._random_initialize_parameters(english, french)
+
   def _define_expectations(self):
     # Return list of joint expectations of translations and
     # expectations for translations of english words

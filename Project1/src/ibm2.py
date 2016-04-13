@@ -37,6 +37,19 @@ class IBM2(IBM):
     # alignment probabilities
     params[1][e_sentence_index] = random.random()
 
+  def _initialize_parameters(self, english, french, init_type, ibm1):
+    params = None
+    if 'uniform' == init_type.lower():
+      params = self._uniform_initialize_parameters(english, french)
+    elif 'random' == init_type.lower():
+      params = self._random_initialize_parameters(english, french)
+    elif 'ibm1' == init_type.lower():
+      params = self._initialize_from_ibm1(english, french, ibm1)
+    else:
+      print 'No such initialization option. Exiting'
+      sys.exit()
+    return params
+
   def _define_expectations(self):
     # Return tuple of joint expectations of translations and
     # expectations for translations of english words
