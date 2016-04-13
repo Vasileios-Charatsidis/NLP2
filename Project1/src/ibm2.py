@@ -2,6 +2,7 @@ import random
 import gc
 from collections import defaultdict
 import copy
+import cPickle as pickle
 
 from ibm import IBM
 
@@ -62,9 +63,11 @@ class IBM2(IBM):
     return params
 
   def __initialize_from_ibm1(english, french, ibm1):
+    ibm1_model = pickle.load(ibm1)
+
     params = self._define_parameters()
     # null word
-    ibm_params = copy.deepcopy(ibm1.params)
+    ibm_params = copy.deepcopy(ibm1_model.params)
     params[0] = ibm_params
     for sentence in range(len(english)):
       e_sentence = english[sentence]
