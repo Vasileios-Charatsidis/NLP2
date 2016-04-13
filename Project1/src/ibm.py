@@ -62,7 +62,7 @@ class IBM:
         # null word
         self._random_initialize_parameter(params_f, self.null_word, self.null_word)
         for i, e_word in enumerate(e_sentence):
-          self._random_initialize_parameter(params_f, i, self.e_vocab[e_word])
+          self._random_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
     return params
 
   # I tried putting maps and getting rid of loops
@@ -88,7 +88,7 @@ class IBM:
         for i, e_word in enumerate(e_sentence):
           e_word_id = self.e_vocab[e_word]
           update_value = conditional_probabilities[i] / norm_const
-          self._update_expectations(expectations, e_len, i, e_word_id, f_len, j, f_word_id, update_value)
+          self._update_expectations(expectations, e_len, i+1, e_word_id, f_len, j, f_word_id, update_value)
     return expectations
 
   def _update_parameters(self, params, joint_expectations, expectations):

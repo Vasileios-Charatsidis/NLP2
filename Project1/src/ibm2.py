@@ -45,7 +45,7 @@ class IBM2(IBM):
 
   def _conditional_probabilities(self, params_f_es, e_sentence):
     # Probability given the NULL WORD is LAST
-    probs = map(lambda (i, e_word): params_f_es[0][self.e_vocab[e_word]] * params_f_es[1][i], enumerate(e_sentence))
+    probs = map(lambda (i, e_word): params_f_es[0][self.e_vocab[e_word]] * params_f_es[1][i+1], enumerate(e_sentence))
     # add null word at back
     probs.append(params_f_es[0][self.null_word] * params_f_es[1][self.null_word])
     return probs
