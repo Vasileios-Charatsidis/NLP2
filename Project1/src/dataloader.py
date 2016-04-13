@@ -18,7 +18,7 @@ def _read(file_name):
   stemmer = PorterStemmer()
   for sentence in f:
     # TODO: Get word roots/lemmas. Should be better
-    sentence_words = __preprocess(sentence, stemmer)
+    sentence_words = _preprocess(sentence, stemmer)
     corpus.append(sentence_words)
     map(lambda word: vocab.add(word), sentence_words)
   return corpus, vocab
@@ -31,8 +31,8 @@ def read_data(english_file_name, french_file_name):
   english, e_vocab = _read(english_file_name)
   french, f_vocab = _read(french_file_name)
   
-#  __print_corpus(english)
-#  __print_corpus(french)
+#  _print_corpus(english)
+#  _print_corpus(french)
   
   return english, french, e_vocab, f_vocab
   
