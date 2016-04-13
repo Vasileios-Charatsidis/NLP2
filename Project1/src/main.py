@@ -73,7 +73,7 @@ if __name__ == '__main__':
   # train model
   print 'start training'
   # english, french, iterations, test_data, init_type = 'random', ibm1 = ''
-  model.train(english, french, iterations, test_data, init_type, ibm1)
+  model.train(english, french, iterations, test_data, model_name, init_type, ibm1)
   print 'finished training'
   sys.stdout.flush()
 

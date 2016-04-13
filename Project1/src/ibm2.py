@@ -1,13 +1,10 @@
 import random
-import gc
 import sys
 from collections import defaultdict
 import copy
 import cPickle as pickle
 
 from ibm import IBM
-
-import time
 
 # Needed for the nested default dictionaries to be serializable
 def default_dict1():
@@ -77,7 +74,7 @@ class IBM2(IBM):
       f_len = len(f_sentence)
       for j, f_word in enumerate(f_sentence):
         params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
-        params_f[1][0] = random.random()
+        params_f[1][self.null_word] = random.random()
         for i, e_word in enumerate(e_sentence):
           params_f[1][i+1] = random.random()
     return params
@@ -130,13 +127,12 @@ class IBM2(IBM):
         self._update_parameters(params_e[f_len], joint_e[f_len], marginal_e[f_len])
 
   def get_alignments(self, english, french):
-    alignments = []
+    alignments = set()
     for sentence_no in range(len(english)):
       e_sentence = english[sentence_no]
       f_sentence = french[sentence_no]
       e_len = len(e_sentence)
       f_len = len(f_sentence)
-      s_alignments = set()
       for j, f_word in enumerate(f_sentence):
         probabilities = []
         if f_word in self.f_vocab:
@@ -162,6 +158,5 @@ class IBM2(IBM):
         # ignore null word
         if alignment < len(e_sentence):
           # let indexing start from 1 (at least until we get anotated data)
-          s_alignments.add( (j+1, alignment+1) )
-      alignments.append(s_alignments)
+          alignments.add( (sentence_no+1, j+1, alignment+1) )
     return alignments

@@ -1,10 +1,7 @@
 import random
-import gc
 from collections import defaultdict
 
 from ibm import IBM
-
-import time
 
 # Needed for the nested default dictionaries to be serializable
 def default_dict():
@@ -51,13 +48,12 @@ class IBM1(IBM):
     self._update_parameters(self.params, expectations[0], expectations[1])
 
   def get_alignments(self, english, french):
-    alignments = []
+    alignments = set()
     for sentence_no in range(len(english)):
       e_sentence = english[sentence_no]
       f_sentence = french[sentence_no]
       e_len = len(e_sentence)
       f_len = len(f_sentence)
-      s_alignments = set()
       for j, f_word in enumerate(f_sentence):
         if f_word not in self.f_vocab:
           continue
@@ -74,7 +70,6 @@ class IBM1(IBM):
         # ignore null word
         if alignment < len(e_sentence):
           # let indexing start from 1 (at least until we get anotated data)
-          s_alignments.add( (j+1, alignment+1) )
-      alignments.append(s_alignments)
+          alignments.add( (sentence_no+1, j+1, alignment+1) )
     return alignments
 

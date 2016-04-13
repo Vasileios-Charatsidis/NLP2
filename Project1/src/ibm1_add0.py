@@ -12,4 +12,4 @@ class IBM1_add0(IBM1):
       if e == self.null_word:
         multiplier = self.multiplier
       for f in joint_expectations_e:
-        params[f][e] = multiplier * joint_expectations_e[f] / expectation_e
+        params[f][e] = multiplier * (joint_expectations_e[f] / expectation_e)

@@ -1,4 +1,5 @@
 import sys
+import os
 import numpy as np
 import math
 import gc
@@ -139,19 +140,9 @@ class IBM:
     return log_likelihood
 
   def _compute_AER(self, alignments, sure, possible):
-    assert(len(alignments) == len(sure))
-    assert(len(alignments) == len(possible))
-    aer = 0
-    for sentence_no in range(len(alignments)):
-      s_alignments  = alignments[sentence_no]
-      s_sure        = sure[sentence_no]
-      s_possible    = possible[sentence_no]
-      # just in the case of sentences with no alignments
-      if 0 == len(s_alignments) + len(s_sure):
-        continue
-      correct_sure = len(s_alignments.intersection(s_sure))
-      correct_possible = len(s_alignments.intersection(s_possible))
-      aer += 1 - float(correct_sure + correct_possible) / float(len(s_alignments) + len(s_sure))
+    correct_sure = len(alignments.intersection(sure))
+    correct_possible = len(alignments.intersection(possible))
+    aer = 1 - float(correct_sure + correct_possible) / float(len(alignments) + len(sure))
     return aer
 
   def _split_data(self, english, french):
@@ -165,10 +156,20 @@ class IBM:
     validation = sentence_nos[training_count:]
     return training, validation
 
+  def _write_alignments_to_file(self, f, alignments):
+    for alignment in alignments:
+      al_string = '%04d' % alignment[0]
+      al_string += ' '
+      al_string += str(alignment[1])
+      al_string += ' '
+      al_string += str(alignment[2])
+      al_string += '\n'
+      f.write(al_string)
+
   # List of sentences
   # sentence - list of words
   # ibm1 - path for file with serialized ibm1
-  def train(self, english, french, iterations, test_data, init_type = 'random', ibm1 = ''):
+  def train(self, english, french, iterations, test_data, model_name, init_type = 'random', ibm1 = ''):
     assert(len(english) == len(french))
     # Initialize params
     start = time.time()
@@ -179,6 +180,10 @@ class IBM:
     # save best params after every iteration
     best_params = self.params
     best_log_likelihood = float('-inf')
+
+    alignments_dir_name = model_name[0:model_name.find('.')]
+    if not os.path.exists(alignments_dir_name):
+      os.makedirs(alignments_dir_name)
 
     # Run EM
     for i in range(iterations):
@@ -199,6 +204,13 @@ class IBM:
       # get alignments for test data
       alignments = self.get_alignments(test_data[0], test_data[1])
       print 'got alignments', time.time() - start
+
+      start = time.time()
+      fname = alignments_dir_name + '/' + str(i) + '.txt'
+      f = open(fname, 'w')
+      self._write_alignments_to_file(f, alignments)
+      f.close()
+      print 'wrote alignments to file', time.time() - start
 
       start = time.time()
       # testing with the same alignments until we get anotated data
