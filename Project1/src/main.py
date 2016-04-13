@@ -3,11 +3,15 @@ import cPickle as pickle
 import gc
 
 import dataloader as dl
-from ibm1 import IBM1 as ibm1
-from ibm2 import IBM2 as ibm2
+from ibm1 import IBM1
+from ibm1_add0 import IBM1_add0
+from ibm1_smooth import IBM1_SMOOTH
+from ibm2 import IBM2
 
 import time
 
+error = 'Usage: python main.py model_type train_english train_french test_english test_french alignments iterations model_name [init_type ibm1_file]\n\
+        init_type is one of uniform, random, ibm1'
 
 def _delete_content(f):
   f.seek(0)
@@ -15,13 +19,13 @@ def _delete_content(f):
 
 def _create_model(model_type, e_vocab, f_vocab):
   if "ibm1" == model_type.lower():
-    return ibm1(e_vocab, f_vocab)
+    return IBM1(e_vocab, f_vocab)
   elif "ibm1_add0" == model_type.lower():
-    return ibm1_add0(e_vocab, f_vocab)
+    return IBM1_add0(e_vocab, f_vocab)
   elif "ibm1_smooth" == model_type.lower():
-    return ibm1_smooth(e_vocab, f_vocab)
+    return IBM1_SMOOTH(e_vocab, f_vocab)
   elif "ibm2" == model_type.lower():
-    return ibm2(e_vocab, f_vocab)
+    return IBM2(e_vocab, f_vocab)
   else:
     sys.stderr.write(model_type + 'is not a valid model type.\nExiting.')
     sys.exit()
@@ -29,8 +33,8 @@ def _create_model(model_type, e_vocab, f_vocab):
 #TODO think of a more sensible name for this script
 
 if __name__ == '__main__':
-  if len(sys.argv) < 8:
-    print 'Usage: python main.py model_type train_english train_french test_english test_french alignments iterations'
+  if len(sys.argv) < 9:
+    print error
     sys.exit()
   
   model_type = sys.argv[1]
@@ -40,6 +44,13 @@ if __name__ == '__main__':
   test_french_fname = sys.argv[5]
   alignments_fname = sys.argv[6]
   iterations = int(sys.argv[7])
+  model_name = sys.argv[8]
+  init_type = 'random'
+  if len(sys.argv) > 9:
+    init_type = sys.argv[9]
+  ibm1 = ''
+  if len(sys.argv) > 10:
+    ibm1 = sys.argv[10]
   
   # read data
   start = time.time()
@@ -61,7 +72,8 @@ if __name__ == '__main__':
   
   # train model
   print 'start training'
-  model.train(english, french, iterations, test_data)
+  # english, french, iterations, test_data, init_type = 'random', ibm1 = ''
+  model.train(english, french, iterations, test_data, init_type, ibm1)
   print 'finished training'
   sys.stdout.flush()
 
@@ -73,7 +85,7 @@ if __name__ == '__main__':
   print 'start serialization'
   start = time.time()
   # serialize model
-  model_file = open('ibm1.pkl', 'wb')
+  model_file = open(model_name, 'wb')
   _delete_content(model_file)
   pickle.dump(model, model_file)
   model_file.close()

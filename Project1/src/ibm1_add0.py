@@ -1,6 +1,6 @@
 from ibm1 import IBM1
 
-class IBM1_add0(IBM):
+class IBM1_add0(IBM1):
 
   multiplier = 5
 

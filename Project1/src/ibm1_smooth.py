@@ -10,4 +10,4 @@ class IBM1_SMOOTH(IBM1):
       expectation_e = expectations[e]
       joint_expectations_e = joint_expectations[e]
       for f in joint_expectations_e:
-        params[f][e] = (joint_expectations_e[f] + n) / (expectation_e + n * V)
+        params[f][e] = (joint_expectations_e[f] + self.n) / (expectation_e + self.n * self.V)

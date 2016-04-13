@@ -48,7 +48,7 @@ class IBM2(IBM):
     # alignment probabilities
     params[1][e_sentence_index] = uniform_prob
 
-  def _uniform_initialize_parameters(english, french):
+  def _uniform_initialize_parameters(self, english, french):
     params = self._define_parameters()
     for sentence in range(len(english)):
       e_sentence = english[sentence]
@@ -63,7 +63,7 @@ class IBM2(IBM):
           self._uniform_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
     return params
 
-  def __initialize_from_ibm1(english, french, ibm1_file_name):
+  def _initialize_from_ibm1(self, english, french, ibm1_file_name):
     ibm1_file = open(ibm1_file_name, 'rb')
     ibm1_model = pickle.load(ibm1_file)
     ibm1_file.close()
@@ -77,7 +77,7 @@ class IBM2(IBM):
       f_len = len(f_sentence)
       for j, f_word in enumerate(f_sentence):
         params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
-        params_f[1][0] = random.random
+        params_f[1][0] = random.random()
         for i, e_word in enumerate(e_sentence):
           params_f[1][i+1] = random.random()
     return params
