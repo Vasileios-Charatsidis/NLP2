@@ -13,9 +13,13 @@ def _delete_content(f):
   f.seek(0)
   f.truncate()
 
-def _create_modelibm1(model_type, e_vocab, f_vocab):
+def _create_model(ibm1model_type, e_vocab, f_vocab):
   if "ibm1" == model_type.lower():
     return ibm1(e_vocab, f_vocab)
+  elif "ibm1_add0" == model_type.lower():
+    return ibm1_add0(e_vocab, f_vocab)
+  elif "ibm1_smooth" == model_type.lower():
+    return ibm1_smooth(e_vocab, f_vocab)
   elif "ibm2" == model_type.lower():
     return ibm2(e_vocab, f_vocab)
   else:
@@ -45,7 +49,7 @@ if __name__ == '__main__':
   print 'French vocab size:', len(f_vocab)
   
   # create a model object
-  model = _create_modelibm1(model_type, e_vocab, f_vocab)
+  model = _create_model(ibm1model_type, e_vocab, f_vocab)
   del e_vocab, f_vocab
   gc.collect()
   
