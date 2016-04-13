@@ -1,7 +1,5 @@
 *.pyc
 *.pkl
 *.pdf
-*.e
-*.f
 *.tar
 *.gz
