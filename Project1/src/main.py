@@ -47,6 +47,7 @@ if __name__ == '__main__':
   print 'data read', time.time() - start
   print 'English vocab size:', len(e_vocab)
   print 'French vocab size:', len(f_vocab)
+  sys.stdout.flush()
   
   # create a model object
   model = _create_model(model_type, e_vocab, f_vocab)
@@ -57,6 +58,7 @@ if __name__ == '__main__':
   print 'start training'
   model.train(english, french, iterations)
   print 'finished training'
+  sys.stdout.flush()
 
   # clean up some memory
   del english

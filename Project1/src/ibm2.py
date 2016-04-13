@@ -1,5 +1,6 @@
 import random
 import gc
+import sys
 from collections import defaultdict
 import copy
 import cPickle as pickle
@@ -62,13 +63,13 @@ class IBM2(IBM):
           self._uniform_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
     return params
 
-  def __initialize_from_ibm1(english, french, ibm1):
-    ibm1_model = pickle.load(ibm1)
+  def __initialize_from_ibm1(english, french, ibm1_file_name):
+    ibm1_file = open(ibm1_file_name, 'rb')
+    ibm1_model = pickle.load(ibm1_file)
+    ibm1_file.close()
 
     params = self._define_parameters()
-    # null word
-    ibm_params = copy.deepcopy(ibm1_model.params)
-    params[0] = ibm_params
+    params[0] = copy.deepcopy(ibm1_model.params)
     for sentence in range(len(english)):
       e_sentence = english[sentence]
       f_sentence = french[sentence]
@@ -80,7 +81,6 @@ class IBM2(IBM):
         for i, e_word in enumerate(e_sentence):
           params_f[1][i+1] = random.random()
     return params
-
 
   def _initialize_parameters(self, english, french, init_type, ibm1):
     params = None
@@ -94,9 +94,6 @@ class IBM2(IBM):
       print 'No such initialization option. Exiting'
       sys.exit()
     return params
-
-
-
 
   def _define_expectations(self):
     # Return tuple of joint expectations of translations and

@@ -15,6 +15,7 @@ class IBM:
     start = time.time()
     self.f_vocab = self._init_vocab(f_vocab,False)
     print 'initialized f_vocab', time.time() - start
+    sys.stdout.flush()
 
   def _init_vocab(self, set_vocab, add_null_word):
     vocab = dict()
@@ -180,6 +181,7 @@ class IBM:
     start = time.time()
     self.params = self._initialize_parameters(english, french, init_type, ibm1)
     print 'initialized params', time.time() - start
+    sys.stdout.flush()
 
     # save best params after every iteration
     best_params = self.params
@@ -194,6 +196,7 @@ class IBM:
       start = time.time()
       self._iteration(english, french)
       print 'iteration finished', time.time() - start
+      sys.stdout.flush()
       
       start = time.time()
       log_likelihood, alignments = self._compute_log_like_and_alignments(english, french)
@@ -210,6 +213,7 @@ class IBM:
         best_log_likelihood = log_likelihood
 
       print 'Iteration', i, 'Time:',time.time() - i_start,'s','Log-likelihood',log_likelihood,'AER',aer
+      sys.stdout.flush()
     
     #recover best params
     self.params = best_params
