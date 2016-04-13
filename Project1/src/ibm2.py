@@ -1,6 +1,7 @@
 import random
 import gc
 from collections import defaultdict
+import copy
 
 from ibm import IBM
 
@@ -37,6 +38,47 @@ class IBM2(IBM):
     # alignment probabilities
     params[1][e_sentence_index] = random.random()
 
+  def _uniform_initialize_parameter(self, params, e_sentence_index, e_word_id):
+    uniform_prob = 0.5
+
+    # translation probabilities
+    params[0][e_word_id] = uniform_prob
+    # alignment probabilities
+    params[1][e_sentence_index] = uniform_prob
+
+  def _uniform_initialize_parameters(english, french):
+    params = self._define_parameters()
+    for sentence in range(len(english)):
+      e_sentence = english[sentence]
+      f_sentence = french[sentence]
+      e_len = len(e_sentence)
+      f_len = len(f_sentence)
+      for j, f_word in enumerate(f_sentence):
+        params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
+        # null word
+        self._uniform_initialize_parameter(params_f, self.null_word, self.null_word)
+        for i, e_word in enumerate(e_sentence):
+          self._uniform_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
+    return params
+
+  def __initialize_from_ibm1(english, french, ibm1):
+    params = self._define_parameters()
+    # null word
+    ibm_params = copy.deepcopy(ibm1.params)
+    params[0] = ibm_params
+    for sentence in range(len(english)):
+      e_sentence = english[sentence]
+      f_sentence = french[sentence]
+      e_len = len(e_sentence)
+      f_len = len(f_sentence)
+      for j, f_word in enumerate(f_sentence):
+        params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
+        params_f[1][0] = random.random
+        for i, e_word in enumerate(e_sentence):
+          params_f[1][i+1] = random.random()
+    return params
+
+
   def _initialize_parameters(self, english, french, init_type, ibm1):
     params = None
     if 'uniform' == init_type.lower():
@@ -49,6 +91,9 @@ class IBM2(IBM):
       print 'No such initialization option. Exiting'
       sys.exit()
     return params
+
+
+
 
   def _define_expectations(self):
     # Return tuple of joint expectations of translations and
