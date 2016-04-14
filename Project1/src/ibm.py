@@ -13,10 +13,10 @@ class IBM:
   def __init__(self, e_vocab, f_vocab):
     start = time.time()
     self.e_vocab = self._init_vocab(e_vocab,True)
-    #print 'initialized e_vocab', time.time() - start
+    print 'initialized e_vocab', time.time() - start
     start = time.time()
     self.f_vocab = self._init_vocab(f_vocab,False)
-    #print 'initialized f_vocab', time.time() - start
+    print 'initialized f_vocab', time.time() - start
     sys.stdout.flush()
 
   def _init_vocab(self, set_vocab, add_null_word):
@@ -113,11 +113,11 @@ class IBM:
     # E-step
     start = time.time()
     expectations = self._e_step(english, french)
-    #print 'E',time.time()-start
+    print 'E',time.time()-start
     # M-step
     start = time.time()
     self._m_step(expectations)
-    #print 'M',time.time()-start
+    print 'M',time.time()-start
 
   def _compute_log_likelihood(self, english, french):
     log_likelihood = 0
@@ -173,7 +173,7 @@ class IBM:
     # Initialize params
     start = time.time()
     self.params = self._initialize_parameters(english, french, init_type, ibm1)
-    #print 'initialized params', time.time() - start
+    print 'initialized params', time.time() - start
     sys.stdout.flush()
 
     # save best params after every iteration
@@ -195,29 +195,29 @@ class IBM:
       #training, validation = self._split_data(english, french) #training, validation - arrays of indices of sentences
       start = time.time()
       self._iteration(english, french)
-      #print 'iteration finished', time.time() - start
+      print 'iteration finished', time.time() - start
       sys.stdout.flush()
 
       start = time.time()
       log_likelihood = self._compute_log_likelihood(english, french)
-      #print 'computed log-likelihood', time.time() - start
+      print 'computed log-likelihood', time.time() - start
 
       start = time.time()
       # get alignments for test data
       alignments = self.get_alignments(test_data[0], test_data[1])
-      #print 'got alignments', time.time() - start
+      print 'got alignments', time.time() - start
 
       start = time.time()
       fname = alignments_dir_name + '/' + str(i) + '.txt'
       f = open(fname, 'w')
       self._write_alignments_to_file(f, alignments)
       f.close()
-      #print 'wrote alignments to file', time.time() - start
+      print 'wrote alignments to file', time.time() - start
 
       start = time.time()
       # testing with the same alignments until we get anotated data
       aer = self._compute_AER(alignments, test_data[2], test_data[3])
-      #print 'computed AER', time.time() - start
+      print 'computed AER', time.time() - start
 
       if best_aer > aer:
         best_aer = aer
@@ -227,7 +227,7 @@ class IBM:
         best_params = self.params
         best_log_likelihood = log_likelihood
 
-      #print 'Iteration', i, 'Time:',time.time() - i_start,'s','Log-likelihood',log_likelihood,'AER',aer
+      print 'Iteration', i, 'Time:',time.time() - i_start,'s','Log-likelihood',log_likelihood,'AER',aer
       sys.stdout.flush()
     
     #recover best params
