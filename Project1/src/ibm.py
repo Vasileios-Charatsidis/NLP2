@@ -126,17 +126,15 @@ class IBM:
       f_sentence = french[sentence_no]
       e_len = len(e_sentence)
       f_len = len(f_sentence)
-      sentence_log_likelihood = 0
       for j, f_word in enumerate(f_sentence):
         f_word_id = self.f_vocab[f_word]
         params_f_es = self._get_parameters(self.params, e_len, f_len, j, f_word_id)
         probabilities = self._conditional_probabilities(params_f_es, e_sentence)
         # max seems to be significantly faster for lists than np.amax
         # or at least for lists of size <= 50
-        max_probability = max(probabilities)
-        assert(max_probability > 0)
-        sentence_log_likelihood += math.log(max_probability)
-      log_likelihood += sentence_log_likelihood
+        marginalized = sum(probabilities)
+        assert(marginalized > 0)
+        log_likelihood += math.log(marginalized)
     return log_likelihood
 
   def _compute_AER(self, alignments, sure, possible):
