@@ -11,7 +11,8 @@ from ibm2 import IBM2
 import time
 
 error = 'Usage: python main.py model_type train_english train_french test_english test_french alignments iterations model_name [init_type ibm1_file]\n\
-        init_type is one of uniform, random, ibm1'
+        init_type is one of uniform, random, ibm1 and is used with ibm2 only\n\
+        ibm1_file is a file containing an ibm1 model and is used with ibm2 and ibm1 initialization only'
 
 def _delete_content(f):
   f.seek(0)
@@ -51,7 +52,7 @@ if __name__ == '__main__':
   ibm1 = ''
   if len(sys.argv) > 10:
     ibm1 = sys.argv[10]
-  
+
   # read data
   start = time.time()
   english, french, e_vocab, f_vocab = dl.read_train_data(train_english_fname, train_french_fname)

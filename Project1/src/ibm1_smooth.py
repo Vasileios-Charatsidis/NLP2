@@ -2,8 +2,11 @@ from ibm1 import IBM1
 
 class IBM1_SMOOTH(IBM1):
 
-  n = 1
   V = 50000
+
+  def __init__(self, e_vocab, f_vocab, n = 0):
+    IBM1.__init__(self, e_vocab, f_vocab)
+    self.n = n
 
   def _update_parameters(self, params, joint_expectations, expectations):
     for e in expectations:
