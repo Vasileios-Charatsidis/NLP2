@@ -31,21 +31,20 @@ class IBM2(IBM):
     # Return them in an iterable
     return [params[0][f_word_id], params[1][e_sentence_len][f_sentence_len][f_sentence_index]]
 
+  def _uniform_initialize_parameter(self, params, e_sentence_index, e_word_id):
+    uniform_prob = 0.5
+    # translation probabilities
+    params[0][e_word_id] = uniform_prob
+    # alignment probabilities
+    params[1][e_sentence_index] = uniform_prob
+
   def _random_initialize_parameter(self, params, e_sentence_index, e_word_id):
     # translation probabilities
     params[0][e_word_id] = random.random()
     # alignment probabilities
     params[1][e_sentence_index] = random.random()
 
-  def _uniform_initialize_parameter(self, params, e_sentence_index, e_word_id):
-    uniform_prob = 0.5
-
-    # translation probabilities
-    params[0][e_word_id] = uniform_prob
-    # alignment probabilities
-    params[1][e_sentence_index] = uniform_prob
-
-  def _uniform_initialize_parameters(self, english, french):
+  def _random_initialize_parameters(self, english, french):
     params = self._define_parameters()
     for sentence in range(len(english)):
       e_sentence = english[sentence]
@@ -55,9 +54,9 @@ class IBM2(IBM):
       for j, f_word in enumerate(f_sentence):
         params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
         # null word
-        self._uniform_initialize_parameter(params_f, self.null_word, self.null_word)
+        self._random_initialize_parameter(params_f, self.null_word, self.null_word)
         for i, e_word in enumerate(e_sentence):
-          self._uniform_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
+          self._random_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
     return params
 
   def _initialize_from_ibm1(self, english, french, ibm1_file_name):

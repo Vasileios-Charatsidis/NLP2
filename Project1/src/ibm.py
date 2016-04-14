@@ -35,8 +35,8 @@ class IBM:
     # Return [a list of] all parameters for f_word_id
     return
 
-  def _random_initialize_parameter(self, params_f, e_sentence_index, e_word_id):
-    # Random initalize all joint parameters for f and e
+  def _uniform_initialize_parameter(self, params_f, e_sentence_index, e_word_id):
+    # Uniformly initalize all joint parameters for f and e
     return
 
   def _define_expectations(self):
@@ -57,7 +57,7 @@ class IBM:
     # Initializes parameters
     return
 
-  def _random_initialize_parameters(self, english, french):
+  def _uniform_initialize_parameters(self, english, french):
     params = self._define_parameters()
     for sentence in range(len(english)):
       e_sentence = english[sentence]
@@ -67,9 +67,9 @@ class IBM:
       for j, f_word in enumerate(f_sentence):
         params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
         # null word
-        self._random_initialize_parameter(params_f, self.null_word, self.null_word)
+        self._uniform_initialize_parameter(params_f, self.null_word, self.null_word)
         for i, e_word in enumerate(e_sentence):
-          self._random_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
+          self._uniform_initialize_parameter(params_f, i+1, self.e_vocab[e_word])
     return params
 
   # I tried putting maps and getting rid of loops
@@ -181,7 +181,9 @@ class IBM:
     best_log_likelihood = float('-inf')
     best_aer = 1
 
-    alignments_dir_name = model_name[0:model_name.find('.')]
+    alignments_dir_name = model_name
+    if -1 != model_name.find('.'):
+      alignments_dir_name = model_name[0:model_name.find('.')]
     if not os.path.exists(alignments_dir_name):
       os.makedirs(alignments_dir_name)
 

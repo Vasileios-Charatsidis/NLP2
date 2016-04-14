@@ -94,7 +94,11 @@ if __name__ == '__main__':
   _climb_once(model_type, e_vocab, f_vocab, right, english, french, iterations, test_data, model_name, lcr_aer, 1)
   left_aer = lcr_aer[0]
   right_aer = lcr_aer[1]
-  while left + 1 < right:
+  old_left = -1
+  old_right = -1
+  while (left + 1 < right) and (old_left != left or old_right != right):
+    old_left = left
+    old_right = right
     current = int((left + right) / 2)
     new_left = int((left + current) / 2)
     new_right = int((current + right) / 2)
@@ -119,6 +123,13 @@ if __name__ == '__main__':
     print lcr
     print lcr_aer
     
+    if all(aer == lcr_aer[0] for aer in lcr_aer):
+      left = lcr[0]
+      right = lcr[0]
+      left_aer = lcr_aer[0]
+      right_aer = lcr_aer[0]
+      break
+
     left_aer = min(lcr_aer)
     li = lcr_aer.index(left_aer)
     left = lcr[li]

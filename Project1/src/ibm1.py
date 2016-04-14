@@ -19,11 +19,12 @@ class IBM1(IBM):
     # Return them in an iterable of them and nothing else
     return params[word_id]
 
-  def _random_initialize_parameter(self, params, e_sentence_index, e_word_id):
-    params[e_word_id] = random.random()
+  def _uniform_initialize_parameter(self, params, e_sentence_index, e_word_id):
+    uniform_prob = 0.5
+    params[e_word_id] = uniform_prob
 
   def _initialize_parameters(self, english, french, init_type, ibm1):
-    return self._random_initialize_parameters(english, french)
+    return self._uniform_initialize_parameters(english, french)
 
   def _define_expectations(self):
     # Return list of joint expectations of translations and
