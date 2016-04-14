@@ -140,9 +140,10 @@ class IBM:
     return log_likelihood
 
   def _compute_AER(self, alignments, sure, possible):
+    probable = sure.union(possible)
     correct_sure = len(alignments.intersection(sure))
-    correct_possible = len(alignments.intersection(possible))
-    aer = 1 - float(correct_sure + correct_possible) / float(len(alignments) + len(sure))
+    correct_probable = len(alignments.intersection(probable))
+    aer = 1 - float(correct_sure + correct_probable) / float(len(alignments) + len(sure))
     return aer
 
   def _split_data(self, english, french):
