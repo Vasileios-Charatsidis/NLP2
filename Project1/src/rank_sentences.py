@@ -1,24 +1,9 @@
 import sys
 from collections import defaultdict
 
-error = 'Usage: python rank_sentences.py ibm1_alignments extension_alignments true_alignments'
+import dataloader as dl
 
-def read_alignments(alignment_file_name):
-  alignment_file = open(alignment_file_name, 'r')
-  sure_alignments = defaultdict(set)
-  prob_alignments = defaultdict(set)
-  for alignment in alignment_file:
-    #0001 1 1 S
-    tokens = alignment.strip('\n').split()
-    sentence_no = int(tokens[0])
-    e = int(tokens[1])
-    f = int(tokens[2])
-    if len(tokens) <= 3 or 's' == tokens[3].lower():
-      sure_alignments[sentence_no].add( (e, f) )
-    else:
-      prob_alignments[sentence_no].add( (e, f) )
-  alignment_file.close()
-  return sure_alignments, prob_alignments
+error = 'Usage: python rank_sentences.py ibm1_alignments extension_alignments true_alignments'
 
 def compute_sentence_aer(alignments, sure, possible):
   probable = sure.union(possible)
@@ -50,9 +35,9 @@ if __name__ == '__main__':
   ext_al_fname = sys.argv[2]
   true_al_fname = sys.argv[3]
 
-  ibm1_alignments, _ = read_alignments(ibm1_al_fname)
-  extension_alignments, _ = read_alignments(ext_al_fname)
-  sure_alignments, prob_alignments = read_alignments(true_al_fname)
+  ibm1_alignments, _ = dl.read_sentence_alignments(ibm1_al_fname)
+  extension_alignments, _ = dl.read_sentence_alignments(ext_al_fname)
+  sure_alignments, prob_alignments = dl.read_sentence_alignments(true_al_fname)
 
   ibm1_aers = compute_aers(ibm1_alignments, sure_alignments, prob_alignments)
   ext_aers = compute_aers(extension_alignments, sure_alignments, prob_alignments)
