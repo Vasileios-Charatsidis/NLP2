@@ -11,7 +11,7 @@ from ibm2 import IBM2
 
 import time
 
-error = 'Usage: python binary_hill.py model_type train_english train_french test_english test_french alignments iterations model_name'
+error = 'Usage: python binary_hill.py model_type train_english train_french test_english test_french alignments iterations model_name max_hyperparam'
 
 class runThread(threading.Thread):
 
@@ -61,7 +61,7 @@ def _climb_once(model_type, e_vocab, f_vocab, hyperparam, english, french, itera
 #TODO think of a more sensible name for this script
 
 if __name__ == '__main__':
-  if len(sys.argv) < 9:
+  if len(sys.argv) < 10:
     print error
     sys.exit()
   
@@ -73,6 +73,7 @@ if __name__ == '__main__':
   alignments_fname = sys.argv[6]
   iterations = int(sys.argv[7])
   model_name = sys.argv[8]
+  right = int(sys.argv[9])
   
   # read data
   start = time.time()
@@ -89,27 +90,42 @@ if __name__ == '__main__':
   
   lcr_aer = [0, 0]
   left = 1
-  right = 100
-  _climb_once(model_type, e_vocab, f_vocab, right, english, french, iterations, test_data, model_name, lcr_aer, 0)
-  _climb_once(model_type, e_vocab, f_vocab, right, english, french, iterations, test_data, model_name, lcr_aer, 1)
+  # right is set from args
+  current = int((left + right) / 2)
+
+  threads = []
+  lcr_aer = [0, 0, 0]
+  _climb_once(model_type, e_vocab, f_vocab, left, english, french, iterations, test_data, model_name+str(left), lcr_aer, 0)
+  _climb_once(model_type, e_vocab, f_vocab, current, english, french, iterations, test_data, model_name+str(current), lcr_aer, 1)
+  _climb_once(model_type, e_vocab, f_vocab, right, english, french, iterations, test_data, model_name+str(right), lcr_aer, 2)
+  # Python has GIL (global interpreter locks) which actually make the multithreaded version run slower
+  # If it were processes and not threads it might have gotten faster, but I am not willing to risk running out of memory
+  #threads.append(runThread(model_type, e_vocab, f_vocab, left, english, french, iterations, test_data, model_name+str(left), lcr_aer, 0))
+  #threads.append(runThread(model_type, e_vocab, f_vocab, current, english, french, iterations, test_data, model_name+str(current), lcr_aer, 1))
+  #threads.append(runThread(model_type, e_vocab, f_vocab, right, english, french, iterations, test_data, model_name+str(right), lcr_aer, 2))
+  for thread in threads:
+    thread.start()
+  for thread in threads:
+    thread.join()
+
   left_aer = lcr_aer[0]
-  right_aer = lcr_aer[1]
+  current_aer = lcr_aer[1]
+  right_aer = lcr_aer[2]
   old_left = -1
   old_right = -1
   while (left + 1 < right) and (old_left != left or old_right != right):
     old_left = left
     old_right = right
-    current = int((left + right) / 2)
     new_left = int((left + current) / 2)
     new_right = int((current + right) / 2)
     threads = []
-    lcr_aer = [0, 0, 0]
-    threads.append(runThread(model_type, e_vocab, f_vocab, new_left, english, french, iterations, test_data, model_name+str(new_left), lcr_aer, 0))
-    threads.append(runThread(model_type, e_vocab, f_vocab, current, english, french, iterations, test_data, model_name+str(current), lcr_aer, 1))
-    threads.append(runThread(model_type, e_vocab, f_vocab, new_right, english, french, iterations, test_data, model_name+str(new_right), lcr_aer, 2))
-    # results should be passed as argOUT to _climb_once
-    #p = Process(target = _climb_once, args = (model_type, e_vocab, f_vocab, new_left, english, french, iterations, test_data, model_name))
-    #p.join()
+    lcr_aer = [left_aer, 0, current_aer, 0, right_aer]
+    _climb_once(model_type, e_vocab, f_vocab, new_left, english, french, iterations, test_data, model_name+str(new_left), lcr_aer, 1)
+    if 0 == current_aer:
+      _climb_once(model_type, e_vocab, f_vocab, current, english, french, iterations, test_data, model_name+str(current), lcr_aer, 2)
+    _climb_once(model_type, e_vocab, f_vocab, new_right, english, french, iterations, test_data, model_name+str(new_right), lcr_aer, 3)
+    #threads.append(runThread(model_type, e_vocab, f_vocab, new_left, english, french, iterations, test_data, model_name+str(new_left), lcr_aer, 1))
+    #threads.append(runThread(model_type, e_vocab, f_vocab, new_right, english, french, iterations, test_data, model_name+str(new_right), lcr_aer, 3))
     for thread in threads:
       thread.start()
     for thread in threads:
@@ -118,8 +134,6 @@ if __name__ == '__main__':
     #prepare for next iteration
     #lcr_aer = [new_left_aer, current_aer, new_right_aer]
     lcr = [left, new_left, current, new_right, right]
-    lcr_aer[:0] = [left_aer]
-    lcr_aer.append(right_aer)
     print lcr
     print lcr_aer
     
@@ -130,26 +144,23 @@ if __name__ == '__main__':
       right_aer = lcr_aer[0]
       break
 
-    left_aer = min(lcr_aer)
-    li = lcr_aer.index(left_aer)
+    min_aer = min(lcr_aer)
+    mi = lcr_aer.index(min_aer)
+    
+    li = max(0, mi-1)
+    ri = min(len(lcr_aer), mi+1)
+    
     left = lcr[li]
-    lcr.remove(left)
-    lcr_aer.remove(left_aer)
-    
-    right_aer = min(lcr_aer)
-    ri = lcr_aer.index(right_aer)
     right = lcr[ri]
+    current = int((left + right) / 2)
+    left_aer = lcr_aer[li]
+    right_aer = lcr_aer[ri]
+    current_aer = 0
+    if current in lcr:
+      current_aer = lcr_aer[lcr.index(current)]
     
-    if ri < li:
-      tmp = left
-      left = right
-      right = tmp
-      tmp = left_aer
-      left_aer = right_aer
-      right_aer = tmp
-    
-    print left, right
-    print left_aer, right_aer
+    print left, current, right
+    print left_aer, current_aer, right_aer
 
   if left_aer < right_aer:
     print left, left_aer
