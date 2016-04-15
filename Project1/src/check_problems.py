@@ -4,6 +4,8 @@ from collections import defaultdict
 
 import dataloader as dl
 
+RARE_THRESHOLD = 20
+
 error = 'Usage: python check_nulls.py problem [train_corpus] corpus_file alignments_file true_alignments_file\n\
          problem could be either:\n\
          1. \'rare\' - then corpus_file should be the source corpus and train_corpus is expected\n\
@@ -94,7 +96,7 @@ if __name__ == '__main__':
     #  print wc, len(word_counts[wc]), len(vocab), 100 * accumulated / float(len(vocab))
     rare = set()
     for wc in wcs:
-      if wc > 5:
+      if wc > RARE_THRESHOLD:
         break
       rare = rare.union(word_counts[wc])
     print len(rare), 100 * len(rare) / float(len(vocab))
