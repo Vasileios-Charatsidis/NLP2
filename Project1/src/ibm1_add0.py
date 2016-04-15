@@ -2,7 +2,7 @@ from ibm1 import IBM1
 
 class IBM1_add0(IBM1):
 
-  def __init__(self, e_vocab, f_vocab, multiplier = 1):
+  def __init__(self, e_vocab, f_vocab, multiplier = 2):
     IBM1.__init__(self, e_vocab, f_vocab)
     self.multiplier = multiplier
 
