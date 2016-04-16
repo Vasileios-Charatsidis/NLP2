@@ -66,6 +66,7 @@ class IBM2(IBM):
 
     params = self._define_parameters()
     params[0] = copy.deepcopy(ibm1_model.params)
+    uniform_prob = 0.5
     for sentence in range(len(english)):
       e_sentence = english[sentence]
       f_sentence = french[sentence]
@@ -73,9 +74,9 @@ class IBM2(IBM):
       f_len = len(f_sentence)
       for j, f_word in enumerate(f_sentence):
         params_f = self._get_parameters(params, e_len, f_len, j, self.f_vocab[f_word])
-        params_f[1][self.null_word] = random.random()
+        params_f[1][self.null_word] = uniform_prob
         for i, e_word in enumerate(e_sentence):
-          params_f[1][i+1] = random.random()
+          params_f[1][i+1] = uniform_prob
     return params
 
   def _initialize_parameters(self, english, french, init_type, ibm1):

@@ -73,7 +73,7 @@ def _read_alignments(alignment_file_name):
   return sure_alignments, prob_alignments
 
 def read_test_data(english_file_name, french_file_name, alignment_file_name):
-  english, _ = _read(english_file_name)
-  french, _ = _read(french_file_name)
+  english, _ = read(english_file_name)
+  french, _ = read(french_file_name)
   sure, probable = _read_alignments(alignment_file_name)
   return english, french, sure, probable
