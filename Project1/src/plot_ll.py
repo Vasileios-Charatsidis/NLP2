@@ -1,21 +1,23 @@
 import re
 import matplotlib.pyplot as plt
 
-def plot_ll(filename, plot_title):
+def plot_ll(filename, plot_title, to_scale = False):
 	likelihoods = []
 	f = open(filename)
 	lines = f.readlines()
 	for line in lines:
 		if re.match(r'^Iteration.*', line):
-			likelihood = line.split()[6]
+			likelihood = float(line.split()[6])
 			likelihoods.append(likelihood)
 
 	f.close()
 
 	plt.figure()
 	plt.plot(likelihoods)
-	plt.xlabel('Number of runs')
+	plt.xlabel('Iterations')
 	plt.ylabel('Likelihood')
+	if to_scale:
+	  plt.ylim(-2e7,-1e7)
 	#plt.title(plot_title)
 	plt.savefig(plot_title + '.png')
 
@@ -25,15 +27,16 @@ def plot_AER(filename, plot_title):
 	lines = f.readlines()
 	for line in lines:
 		if re.match(r'^Iteration.*', line):
-			AER = line.split()[8]
+			AER = float(line.split()[8])
 			AERS.append(AER)
 
 	f.close()
 
 	plt.figure()
 	plt.plot(AERS)
-	plt.xlabel('Number of runs')
+	plt.xlabel('Iterations')
 	plt.ylabel('AER')
+	plt.ylim(0,1)
 	#plt.title(plot_title)
 	plt.savefig(plot_title + '.png')
 
@@ -56,11 +59,11 @@ if __name__ == '__main__':
 	plot_ll('ibm1.log', 'log_likelihood_ibm1_standard')
 	plot_ll('ibm1_smooth.log', 'log_likelihood_ibm1_extension_smoothing_translation_counts')
 	plot_ll('ibm1_add0.log', 'log_likelihood_ibm_extension_adding_null_words')
-	plot_ll('ibm2_uniform.log', 'log_likelihood_ibm2_uniform_initialization')
-	plot_ll('ibm2_random1.log', 'log_likelihood_ibm2_first_random_initialization')
-	plot_ll('ibm2_random2.log', 'log_likelihood_ibm2_second_random_initialization')
-	plot_ll('ibm2_random3.log', 'log_likelihood_ibm2_third_random_initialization')
-	plot_ll('ibm2_ibm1.log', 'log_likelihood_ibm2_ibm1_initialization')
+	plot_ll('ibm2_uniform.log', 'log_likelihood_ibm2_uniform_initialization', True)
+	plot_ll('ibm2_random1.log', 'log_likelihood_ibm2_first_random_initialization', True)
+	plot_ll('ibm2_random2.log', 'log_likelihood_ibm2_second_random_initialization', True)
+	plot_ll('ibm2_random3.log', 'log_likelihood_ibm2_third_random_initialization', True)
+	plot_ll('ibm2_ibm1.log', 'log_likelihood_ibm2_ibm1_initialization', True)
 
 	plot_AER('ibm1.log', 'AER_ibm1_standard')
 	plot_AER('ibm1_smooth.log', 'AER_ibm1_extension_smoothing_translation_counts')

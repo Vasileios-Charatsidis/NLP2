@@ -4,7 +4,7 @@ class IBM1_SMOOTH(IBM1):
 
   V = 40000
 
-  def __init__(self, e_vocab, f_vocab, n = 0):
+  def __init__(self, e_vocab, f_vocab, n = 1):
     IBM1.__init__(self, e_vocab, f_vocab)
     self.n = n
 

@@ -1,6 +1,7 @@
 import sys
 import threading
 from multiprocessing import Process, Manager
+import math
 import cPickle as pickle
 import gc
 
@@ -14,7 +15,7 @@ import time
 
 TIME = 300
 
-error = 'Usage: python binary_hill.py model_type train_english train_french test_english test_french alignments iterations model_name max_hyperparam'
+error = 'Usage: python binary_hill.py model_type train_english train_french test_english test_french alignments iterations model_name min_hyperparam max_hyperparam'
 
 class runThread(threading.Thread):
 
@@ -87,7 +88,7 @@ def _climb_once(model_type, e_vocab, f_vocab, hyperparam, english, french, itera
 #TODO think of a more sensible name for this script
 
 if __name__ == '__main__':
-  if len(sys.argv) < 10:
+  if len(sys.argv) < 11:
     print error
     sys.exit()
   
@@ -99,7 +100,8 @@ if __name__ == '__main__':
   alignments_fname = sys.argv[6]
   iterations = int(sys.argv[7])
   model_name = sys.argv[8]
-  right = int(sys.argv[9])
+  left = float(sys.argv[9])
+  right = float(sys.argv[10])
   
   # read data
   start = time.time()
@@ -115,9 +117,9 @@ if __name__ == '__main__':
   sys.stdout.flush()
   
   lcr_aer = [0, 0]
-  left = 1
-  # right is set from args
-  current = int((left + right) / 2)
+  # left and right are set from args
+  current = (left + right) / 2
+  current = math.floor(10*current) / 10
 
   #lcr_aer = [0, 0, 0]
   #_climb_once(model_type, e_vocab, f_vocab, left, english, french, iterations, test_data, model_name+str(left), lcr_aer, 0)
@@ -154,14 +156,17 @@ if __name__ == '__main__':
   current_aer = lcr_aer[1]
   right_aer = lcr_aer[2]
   
-  new_left = int((left + current) / 2)
-  new_right = int((current + right) / 2)
+  #c = math.floor(c*10) / 10
+  new_left = (left + current) / 2
+  new_right = (current + right) / 2
+  new_left = math.floor(10*new_left) / 10
+  new_right = math.floor(10*new_right) / 10
   # ok since it will always be ran with right >= 5
   lcr_aer = manager.list([left_aer, 0, current_aer, 0, right_aer])
 
   old_left = -1
   old_right = -1
-  while (left + 1 < right) and (old_left != left or old_right != right):
+  while (left < right) and (old_left != left or old_right != right):
     old_left = left
     old_right = right
     
@@ -223,9 +228,12 @@ if __name__ == '__main__':
     
     left = lcr[li]
     right = lcr[ri]
-    current = int((left + right) / 2)
-    new_left = int((left + current) / 2)
-    new_right = int((current + right) / 2)
+    current = (left + right) / 2
+    new_left = (left + current) / 2
+    new_right = (current + right) / 2
+    current = math.floor(10*current) / 10
+    new_left = math.floor(10*new_left) / 10
+    new_right = math.floor(10*new_right) / 10
     
     left_aer = lcr_aer[li]
     right_aer = lcr_aer[ri]
