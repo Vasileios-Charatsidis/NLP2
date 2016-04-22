@@ -46,6 +46,7 @@ def create_fst_binary(sentence, sentence_no, output_dir):
     fst_txt.write(FST_TEMPLATE.format(pos, pos+1, word))
     isymb_txt.write(NUM_SYMB_TEMPLATE.format(pos+1))
     osymb_txt.write(WORD_SYMB_TEMPLATE.format(word, pos+1))
+  fst_txt.write(str(len(sentence)) + '\n')
   fst_txt.close()
   isymb_txt.close()
   osymb_txt.close()
