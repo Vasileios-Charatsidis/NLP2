@@ -1,22 +1,11 @@
 import sys
 import os
 import subprocess
-import codecs
 import string
+import common
+
 
 error = 'Usage: python encode_source_as_transducers.py input_sentences output_folder sentence_count'
-
-EPSILON = '<eps>'
-FST_TEMPLATE = '{0:d} {1:d} {1:d} {2}\n'
-WORD_SYMB_TEMPLATE = '{0} {1:d}\n'
-NUM_SYMB_TEMPLATE = '{0:d} {0:d}\n'
-
-def make_path_name(directory, name, extension):
-    return '{0}/{1:d}{2}'.format(directory, name, extension)
-
-
-def open_file(fname, mode):
-    return codecs.open(fname, mode, encoding='utf8')
 
 
 def construct_callee(fst_txt, fst_bin, isymb, osymb):
@@ -33,25 +22,25 @@ def construct_callee(fst_txt, fst_bin, isymb, osymb):
 
 def create_fst_binary(sentence, sentence_no, output_dir):
     # Create file names
-    fst_txt_name = make_path_name(output_dir, sentence_no, 'fst.txt')
-    fst_bin_name = make_path_name(output_dir, sentence_no, 'fst.fst')
-    isymb_txt_name = make_path_name(output_dir, sentence_no, 'isymb.txt')
-    osymb_txt_name = make_path_name(output_dir, sentence_no, 'osymb.txt')
+    fst_txt_name = common.make_path_name(output_dir, 'fst_txt', sentence_no)
+    fst_bin_name = common.make_path_name(output_dir, 'fst_bin', sentence_no)
+    isymb_txt_name = common.make_path_name(output_dir, 'isymb', sentence_no)
+    osymb_txt_name = common.make_path_name(output_dir, 'osymb', sentence_no)
     # Open files
-    fst_txt = open_file(fst_txt_name, 'w')
-    isymb_txt = open_file(isymb_txt_name, 'w')
-    osymb_txt = open_file(osymb_txt_name, 'w')
+    fst_txt = common.open_utf(fst_txt_name, 'w')
+    isymb_txt = common.open_utf(isymb_txt_name, 'w')
+    osymb_txt = common.open_utf(osymb_txt_name, 'w')
     # Write to files
     # Add epsilon to symbol files just in case
-    isymb_txt.write(WORD_SYMB_TEMPLATE.format(EPSILON, 0))
-    osymb_txt.write(WORD_SYMB_TEMPLATE.format(EPSILON, 0))
+    isymb_txt.write(common.WORD_SYMB_TEMPLATE.format(common.EPSILON, 0))
+    osymb_txt.write(common.WORD_SYMB_TEMPLATE.format(common.EPSILON, 0))
     word_ids = dict()
     for pos, word in enumerate(sentence):
-        fst_txt.write(FST_TEMPLATE.format(pos, pos+1, word))
-        isymb_txt.write(NUM_SYMB_TEMPLATE.format(pos+1))
+        fst_txt.write(common.FST_TEMPLATE.format(pos, pos+1, word))
+        isymb_txt.write(common.NUM_SYMB_TEMPLATE.format(pos+1))
         word_ids[word] = pos + 1
     for word in word_ids:
-        osymb_txt.write(WORD_SYMB_TEMPLATE.format(word, word_ids[word]))
+        osymb_txt.write(common.WORD_SYMB_TEMPLATE.format(word, word_ids[word]))
     fst_txt.write(str(len(sentence)) + '\n')
     fst_txt.close()
     isymb_txt.close()
@@ -73,7 +62,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    source_file = open_file(source, 'r')
+    source_file = common.open_utf(source, 'r')
 
     sentence_no = 0
     for sentence_line in source_file:

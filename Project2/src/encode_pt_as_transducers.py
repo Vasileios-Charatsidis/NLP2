@@ -1,23 +1,11 @@
 import sys
 import os
 import subprocess
-import codecs
 import string
 import math
+import common
 
 error = 'Usage: python encode_pt_as_transducers.py src_sentences phrase_tables_folder weights_file output_folder phrase_tables_count'
-
-EPSILON = u'<eps>'
-FST_TEMPLATE = u'{0:d} {1:d} {2} {3} {4:f}\n'
-WORD_SYMB_TEMPLATE = u'{0} {1:d}\n'
-
-
-def make_path_name(directory, name, extension):
-    return '{0}/{1:d}{2}'.format(directory, name, extension)
-
-
-def open_file(fname, mode):
-    return codecs.open(fname, mode, encoding='utf8')
 
 
 def construct_callee(fst_txt, fst_bin, isymb, osymb):
@@ -32,7 +20,7 @@ def construct_callee(fst_txt, fst_bin, isymb, osymb):
     return callee
 
 
-def calculate_weight(tgt_words, features, weights):
+def calculate_weight(features, weights):
     weight = 0
     for feature in features:
         weight += weights[feature] * features[feature]
@@ -40,28 +28,28 @@ def calculate_weight(tgt_words, features, weights):
 
 
 def process_phrase(fst_file, src_phrase, tgt_phrase, features, weights, state_id):
-    weight = calculate_weight(tgt_phrase, features, weights)
+    weight = calculate_weight(features, weights)
     if 1 == len(src_phrase) and 1 == len(tgt_phrase):
-        fst_file.write(FST_TEMPLATE.format(0, 0, src_phrase[0], tgt_phrase[0], weight))
+        fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(0, 0, src_phrase[0], tgt_phrase[0], weight))
     else:
         for i, src_word in enumerate(src_phrase):
             if 0 == i:
-                fst_file.write(FST_TEMPLATE.format(0, state_id, src_word, EPSILON, weight))
+                fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(0, state_id, src_word, common.EPSILON, weight))
             else:
                 weight = 0
-                fst_file.write(FST_TEMPLATE.format(state_id, state_id + 1, src_word, EPSILON, weight))
+                fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(state_id, state_id + 1, src_word, common.EPSILON, weight))
                 state_id += 1
         weight = 0
         for tgt_word in tgt_phrase[:-1]:
-            fst_file.write(FST_TEMPLATE.format(state_id, state_id + 1, EPSILON, tgt_word, weight))
+            fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(state_id, state_id + 1, common.EPSILON, tgt_word, weight))
             state_id += 1
-        fst_file.write(FST_TEMPLATE.format(state_id, 0, EPSILON, tgt_phrase[-1], 0))
+        fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(state_id, 0, common.EPSILON, tgt_phrase[-1], 0))
         state_id += 1
     return state_id
 
 
 def write_fst_file(phrases, unknown_words, weights, fst_fname):
-    fst_file = open_file(fst_fname, 'w')
+    fst_file = common.open_utf(fst_fname, 'w')
     state_id = 1
     for phrase in phrases:
         state_id = process_phrase(fst_file, phrase[0], phrase[1], phrase[2], weights, state_id)
@@ -73,9 +61,9 @@ def write_fst_file(phrases, unknown_words, weights, fst_fname):
 
 
 def write_symbol_file(word_ids, symb_fname):
-    symb_file = open_file(symb_fname, 'w')
+    symb_file = common.open_utf(symb_fname, 'w')
     for word in word_ids:
-        symb_file.write(WORD_SYMB_TEMPLATE.format(word, word_ids[word]))
+        symb_file.write(common.WORD_SYMB_TEMPLATE.format(word, word_ids[word]))
     symb_file.close()
 
 
@@ -83,7 +71,7 @@ def create_word_ids(words):
     word_ids = dict()
     # Add epsilon
     word_id = 0
-    word_ids[EPSILON] = word_id
+    word_ids[common.EPSILON] = word_id
     word_id += 1
     for word in words:
         word_ids[word] = word_id
@@ -107,7 +95,7 @@ def read_phrase_table(sentence_words, pt_fname):
     phrases = []
     known_src_words = set()
     known_tgt_words = set()
-    pt_file = open_file(pt_fname, 'r')
+    pt_file = common.open_utf(pt_fname, 'r')
     for line in pt_file:
         phrase = line.strip(string.whitespace).split(' ||| ')
         src_words = phrase[1].strip(string.whitespace).split()
@@ -115,7 +103,7 @@ def read_phrase_table(sentence_words, pt_fname):
         features = collect_features(phrase[3], tgt_words)
         known_src_words.update(src_words)
         known_tgt_words.update(tgt_words)
-        phrases.append( (src_words, tgt_words, features) )
+        phrases.append((src_words, tgt_words, features))
     pt_file.close()
 
     unknown_words = set(sentence_words).difference(known_src_words)
@@ -131,10 +119,10 @@ def process_setence(sentence_str, pt_fname, weights, sentence_no, output_dir):
     # Read the phrase table file
     phrases, unknown_words, src_word_ids, tgt_word_ids = read_phrase_table(sentence_words, pt_fname)
     # Create file names
-    fst_bin_name = make_path_name(output_dir, sentence_no, 'fst.fst')
-    fst_fname = make_path_name(output_dir, sentence_no, 'fst.txt')
-    isymb_fname = make_path_name(output_dir, sentence_no, 'isymb.txt')
-    osymb_fname = make_path_name(output_dir, sentence_no, 'osymb.txt')
+    fst_fname = common.make_path_name(output_dir, 'fst_txt', sentence_no)
+    fst_bin_name = common.make_path_name(output_dir, 'fst_bin', sentence_no)
+    isymb_fname = common.make_path_name(output_dir, 'isymb', sentence_no)
+    osymb_fname = common.make_path_name(output_dir, 'osymb', sentence_no)
     # Write to files
     write_symbol_file(src_word_ids, isymb_fname)
     write_symbol_file(tgt_word_ids, osymb_fname)
@@ -146,14 +134,14 @@ def process_setence(sentence_str, pt_fname, weights, sentence_no, output_dir):
 
 def read_weights(weights_fname):
     weights = dict()
-    weights_file = open_file(weights_fname, 'r')
+    weights_file = common.open_utf(weights_fname, 'r')
     for line in weights_file:
         line = line.strip(string.whitespace).split()
         if len(line) < 2:
             continue
         weights[line[0]] = float(line[1])
     weights_file.close()
-    return  weights
+    return weights
 
 if __name__ == '__main__':
     if len(sys.argv) < 6:
@@ -172,15 +160,10 @@ if __name__ == '__main__':
     # Read weights
     weights = read_weights(weights_fname)
 
-    # Get all files from the input dir
-    pts_all = [os.path.join(pts_dir, f) for f in os.listdir(pts_dir)]
-    # Filter out the ones that are not ordinary files
-    pts = [f for f in pts_all if os.path.isfile(f)]
-    # Sort them based on corresponding sentence number
-    pts.sort(key = lambda f: int(f[f.rfind('.')+1:]))
+    pts = common.list_filter_sort_filenames(pts_dir, lambda f: os.path.isfile(f))
 
     # Open sentences and get ready to read
-    sentences = open_file(sentences_fname, 'r')
+    sentences = common.open_utf(sentences_fname, 'r')
     sentence_no = 0
     for pt in pts:
         if sentence_no >= sentence_count:
