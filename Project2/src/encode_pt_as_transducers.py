@@ -1,23 +1,10 @@
 import sys
 import os
-import subprocess
 import string
 import math
 import common
 
 error = 'Usage: python encode_pt_as_transducers.py src_sentences phrase_tables_folder weights_file output_folder phrase_tables_count'
-
-
-def construct_callee(fst_txt, fst_bin, isymb, osymb):
-    # fstcompile --isymbols=isyms.txt --osymbols=osyms.txt --keep_isymbols --keep_osymbols text.fst binary.fst
-    callee = ['fstcompile']
-    callee.append('--isymbols=' + isymb)
-    callee.append('--osymbols=' + osymb)
-    callee.append('--keep_isymbols')
-    callee.append('--keep_osymbols')
-    callee.append(fst_txt)
-    callee.append(fst_bin)
-    return callee
 
 
 def calculate_weight(features, weights):
@@ -128,8 +115,7 @@ def process_setence(sentence_str, pt_fname, weights, sentence_no, output_dir):
     write_symbol_file(tgt_word_ids, osymb_fname)
     write_fst_file(phrases, unknown_words, weights, fst_fname)
     # Compile text files in binary fst
-    callee = construct_callee(fst_fname, fst_bin_name, isymb_fname, osymb_fname)
-    subprocess.call(callee)
+    common.make_fst(fst_fname, fst_bin_name, isymb_fname, osymb_fname)
 
 
 def read_weights(weights_fname):

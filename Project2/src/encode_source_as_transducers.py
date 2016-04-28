@@ -1,23 +1,10 @@
 import sys
 import os
-import subprocess
 import string
 import common
 
 
 error = 'Usage: python encode_source_as_transducers.py input_sentences output_folder sentence_count'
-
-
-def construct_callee(fst_txt, fst_bin, isymb, osymb):
-    # fstcompile --isymbols=isyms.txt --osymbols=osyms.txt --keep_isymbols --keep_osymbols text.fst binary.fst
-    callee = ['fstcompile']
-    callee.append('--isymbols=' + isymb)
-    callee.append('--osymbols=' + osymb)
-    callee.append('--keep_isymbols')
-    callee.append('--keep_osymbols')
-    callee.append(fst_txt)
-    callee.append(fst_bin)
-    return callee
 
 
 def create_fst_binary(sentence, sentence_no, output_dir):
@@ -46,8 +33,7 @@ def create_fst_binary(sentence, sentence_no, output_dir):
     isymb_txt.close()
     osymb_txt.close()
     # Compile text files in binary fst
-    callee = construct_callee(fst_txt_name, fst_bin_name, isymb_txt_name, osymb_txt_name)
-    subprocess.call(callee)
+    common.make_fst(fst_txt_name, fst_bin_name, isymb_txt_name, osymb_txt_name)
 
 
 if __name__ == '__main__':

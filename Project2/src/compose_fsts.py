@@ -7,15 +7,6 @@ import common
 error = 'Usage: python compose_fsts.py sentence_fsts_folder pt_fsts_folder output_folder'
 
 
-def construct_callee(sentence_fst, pt_fst, output_fst):
-    # fstcompile --isymbols=isyms.txt --osymbols=osyms.txt --keep_isymbols --keep_osymbols text.fst binary.fst
-    callee = ['fstcompose']
-    callee.append(sentence_fst)
-    callee.append(pt_fst)
-    callee.append(output_fst)
-    return callee
-
-
 if __name__ == '__main__':
     if len(sys.argv) < 4:
         print error
@@ -36,5 +27,4 @@ if __name__ == '__main__':
         pt_no = int(pt_fst_fname[pt_fst_fname.rfind('.')+1:])
         assert(sentence_no == pt_no)
         output_fst_fname = common.make_path_name(output_dir, 'fst_bin', sentence_no)
-        callee = construct_callee(sentence_fst_fname, pt_fst_fname, output_fst_fname)
-        subprocess.call(callee)
+        common.compose_fsts(sentence_fst_fname, pt_fst_fname, output_fst_fname)
