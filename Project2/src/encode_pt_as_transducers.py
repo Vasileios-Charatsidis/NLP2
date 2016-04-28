@@ -42,7 +42,6 @@ def process_phrase(fst_file, src_phrase, tgt_phrase, features, weights, state_id
         fst_file.write(FST_TEMPLATE.format(0, 0, src_phrase[0], tgt_phrase[0], weight))
     else:
         for i, src_word in enumerate(src_phrase):
-            print state_id
             if 0 == i:
                 fst_file.write(FST_TEMPLATE.format(0, state_id, src_word, EPSILON, weight))
             else:
@@ -50,9 +49,7 @@ def process_phrase(fst_file, src_phrase, tgt_phrase, features, weights, state_id
                 fst_file.write(FST_TEMPLATE.format(state_id, state_id + 1, src_word, EPSILON, weight))
                 state_id += 1
         weight = 0
-        print state_id
         for tgt_word in tgt_phrase[:-1]:
-            print state_id
             fst_file.write(FST_TEMPLATE.format(state_id, state_id + 1, EPSILON, tgt_word, weight))
             state_id += 1
         fst_file.write(FST_TEMPLATE.format(state_id, 0, EPSILON, tgt_phrase[-1], 0))
@@ -66,8 +63,7 @@ def write_fst_file(phrases, unknown_words, weights, fst_fname):
     for phrase in phrases:
         state_id = process_phrase(fst_file, phrase[0], phrase[1], phrase[2], weights, state_id)
     for word in unknown_words:
-        features = make_pass_through_features(word)
-        process_phrase(fst_file, [word], [word], {'PassThrough': 1}, weights)
+        process_phrase(fst_file, [word], [word], {'PassThrough': 1}, weights, 0)
     # Mark starting state as final
     fst_file.write('0\n')
     fst_file.close()
@@ -121,6 +117,7 @@ def read_phrase_table(sentence_words, pt_fname):
 
     unknown_words = sentence_words.difference(known_src_words)
     src_word_ids = create_word_ids(sentence_words)
+    known_tgt_words.update(unknown_words)
     tgt_word_ids = create_word_ids(known_tgt_words)
     return phrases, unknown_words, src_word_ids, tgt_word_ids
 
