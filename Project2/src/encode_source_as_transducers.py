@@ -45,10 +45,13 @@ def create_fst_binary(sentence, sentence_no, output_dir):
     # Add epsilon to symbol files just in case
     isymb_txt.write(WORD_SYMB_TEMPLATE.format(EPSILON, 0))
     osymb_txt.write(WORD_SYMB_TEMPLATE.format(EPSILON, 0))
+    word_ids = dict()
     for pos, word in enumerate(sentence):
         fst_txt.write(FST_TEMPLATE.format(pos, pos+1, word))
         isymb_txt.write(NUM_SYMB_TEMPLATE.format(pos+1))
-        osymb_txt.write(WORD_SYMB_TEMPLATE.format(word, pos+1))
+        word_ids[word] = pos + 1
+    for word in word_ids:
+        osymb_txt.write(WORD_SYMB_TEMPLATE.format(word, word_ids[word]))
     fst_txt.write(str(len(sentence)) + '\n')
     fst_txt.close()
     isymb_txt.close()

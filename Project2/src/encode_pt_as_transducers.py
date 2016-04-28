@@ -11,11 +11,14 @@ EPSILON = u'<eps>'
 FST_TEMPLATE = u'{0:d} {1:d} {2} {3} {4:f}\n'
 WORD_SYMB_TEMPLATE = u'{0} {1:d}\n'
 
+
 def make_path_name(directory, name, extension):
     return '{0}/{1:d}{2}'.format(directory, name, extension)
 
+
 def open_file(fname, mode):
     return codecs.open(fname, mode, encoding='utf8')
+
 
 def construct_callee(fst_txt, fst_bin, isymb, osymb):
     # fstcompile --isymbols=isyms.txt --osymbols=osyms.txt --keep_isymbols --keep_osymbols text.fst binary.fst
@@ -115,7 +118,7 @@ def read_phrase_table(sentence_words, pt_fname):
         phrases.append( (src_words, tgt_words, features) )
     pt_file.close()
 
-    unknown_words = sentence_words.difference(known_src_words)
+    unknown_words = set(sentence_words).difference(known_src_words)
     src_word_ids = create_word_ids(sentence_words)
     known_tgt_words.update(unknown_words)
     tgt_word_ids = create_word_ids(known_tgt_words)
@@ -124,7 +127,7 @@ def read_phrase_table(sentence_words, pt_fname):
 
 def process_setence(sentence_str, pt_fname, weights, sentence_no, output_dir):
     # Make a set of all words in the source sentence
-    sentence_words = set(sentence_str.strip(string.whitespace).split())
+    sentence_words = sentence_str.strip(string.whitespace).split()
     # Read the phrase table file
     phrases, unknown_words, src_word_ids, tgt_word_ids = read_phrase_table(sentence_words, pt_fname)
     # Create file names
