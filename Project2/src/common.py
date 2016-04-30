@@ -19,11 +19,11 @@ def open_utf(fname, mode):
     return codecs.open(fname, mode, encoding='utf8')
 
 
-def list_filter_sort_filenames(folder, filter):
+def list_filter_sort_filenames(folder, filter_func):
     # Get all files from the dir
     filenames_all = [os.path.join(folder, f) for f in os.listdir(folder)]
     # Filter out the ones that are not ordinary files
-    filenames = [f for f in filenames_all if filter(f)]
+    filenames = [f for f in filenames_all if filter_func(f)]
     # Sort them based on corresponding sentence number (which is extension)
     filenames.sort(key=lambda f: int(f[f.rfind('.') + 1:]))
     return filenames
@@ -71,7 +71,7 @@ def get_best_derivations_h(best_derivations_fname, best_derivations_h_fname):
     # len(start_transitions) > 0
     while start_transitions:
         start_transition = start_transitions.pop()
-        aligned_translation = get_aligned_translation(start_transition, transitions, finals)
+        aligned_translation, _ = get_translation(start_transition, transitions, finals, True)
         best_derivations_h_file.write(aligned_translation + '\n')
     best_derivations_h_file.close()
 
@@ -95,52 +95,100 @@ def read_derivations(best_derivations_file):
                 start_node = line[0]
             # Collect transitions that start a sentence in a different set
             if line[0] == start_node:
+                assert(4 == len(line))
                 start_transitions.add((line[1], line[2], line[3]))
             # from key go to 1st el of tuple, second and third elements are alignment and tgt word
             else:
-                transitions[line[0]] = (line[1], line[2], line[3])
+                if 4 == len(line):
+                    transitions[line[0]] = (line[1], line[2], line[3])
+                else:
+                    transitions[line[0]] = (line[1], line[2], line[3], line[4])
     return start_transitions, transitions, finals
 
 
-def get_aligned_translation(start_transition, transitions, finals):
+def get_translation(start_transition, transitions, finals, aligned=False):
     assert(start_transition[1] == EPSILON)
     assert(start_transition[2] == EPSILON)
     next_state = start_transition[0]
-    aligned_sentence = ''
+    sentence = ''
+    sentence_cost = 0
     while next_state not in finals:
-        aligned_phrase, next_state = get_next_phrase(next_state, transitions)
-        aligned_sentence += aligned_phrase
+        phrase, next_state, cost = get_next_phrase(next_state, transitions, aligned)
+        sentence += phrase
         if next_state not in finals:
-            aligned_sentence += ' '
-    return aligned_sentence
+            sentence += ' '
+        sentence_cost += cost
+    return sentence, sentence_cost
 
 
-def get_next_phrase(next_state, transitions):
+def get_next_phrase(next_state, transitions, aligned):
     transition = transitions[next_state]
-    aligned_phrase = ''
+    phrase = ''
+    cost = 0
     # in case of other empty transitions
     if transition[1] == EPSILON:
         assert(transition[2] == EPSILON)
-        return '', transition[0]
+        assert(3 == len(transition))
+        return phrase, transition[0], cost
     # singleton phrase
     if transition[2] != EPSILON:
-        aligned_phrase += u'{0} |{1}-{1}|'.format(transition[2], transition[1])
-        return aligned_phrase, transition[0]
+        if aligned:
+            phrase += u'{0} |{1}-{1}|'.format(transition[2], transition[1])
+        else:
+            phrase += transition[2]
+        assert(4 == len(transition))
+        return phrase, transition[0], float(transition[3])
     # phrases with more than 1 words
     align_start = transition[1]
     align_end = align_start
     while transition[1] != EPSILON:
         align_end = transition[1]
         next_state = transition[0]
+        # It will only be the first one, but too much trouble to assert that.
+        if len(transition) > 3:
+            cost += float(transition[3])
         transition = transitions[next_state]
     while transition[1] == EPSILON:
         if transition[2] != EPSILON:
-            aligned_phrase += transition[2] + ' '
+            phrase += transition[2] + ' '
         next_state = transition[0]
+        assert (3 == len(transition))
         # Final state is not a key in transitions
         if next_state in transitions:
             transition = transitions[next_state]
         else:
             break
-    aligned_phrase += '|{0}-{1}|'.format(align_start, align_end)
-    return aligned_phrase, next_state
+    if aligned:
+        phrase += '|{0}-{1}|'.format(align_start, align_end)
+    return phrase, next_state, cost
+
+
+def get_best_translation_with_best_derivation(best_derivations_fname):
+    best_derivations_file = open_utf(best_derivations_fname, 'r')
+    start_transitions, transitions, finals = read_derivations(best_derivations_file)
+    best_derivations_file.close()
+    translations = dict()
+    # len(start_transitions) > 0
+    while start_transitions:
+        start_transition = start_transitions.pop()
+        translation, cost = get_translation(start_transition, transitions, finals)
+        derivation, _ = get_translation(start_transition, transitions, finals, True)
+        if translation not in translations:
+            translations[translation] = list()
+        translations[translation].append((cost, derivation))
+    best_translation = None
+    best_derivation = None
+    best_cost = None
+    for translation in translations:
+        derivations = translations[translation]
+        cost = reduce(lambda d1, d2: d1[0] + d2[0], derivations)
+        if best_cost is None or best_cost > cost:
+            best_translation = translation
+            best_tr_derivation = None
+            best_der_cost = None
+            for derivation in derivations:
+                if best_der_cost is None or best_der_cost > derivation[0]:
+                    best_der_cost = derivation[0]
+                    best_tr_derivation = derivation[1]
+            best_derivation = best_tr_derivation
+    return best_translation, best_derivation

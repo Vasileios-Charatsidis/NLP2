@@ -3,7 +3,7 @@ import os
 import common
 
 
-error = 'Usage: python compose_fsts.py sentence_fsts_folder pt_fsts_folder output_folder'
+error = 'Usage: python get_best_derivations.py sentence_fsts_folder pt_fsts_folder output_folder'
 derivations_count = 100
 
 if __name__ == '__main__':
