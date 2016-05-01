@@ -50,7 +50,7 @@ def write_fst_file(phrases, unknown_words, weights, fst_fname):
 def write_symbol_file(word_ids, symb_fname):
     symb_file = common.open_utf(symb_fname, 'w')
     for word in word_ids:
-        symb_file.write(common.WORD_SYMB_TEMPLATE.format(word, word_ids[word]))
+        symb_file.write(common.SYMB_TEMPLATE.format(word, word_ids[word]))
     symb_file.close()
 
 

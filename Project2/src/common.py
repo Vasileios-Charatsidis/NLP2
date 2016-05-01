@@ -5,10 +5,9 @@ import string
 
 
 EPSILON = u'<eps>'
-FST_TEMPLATE = u'{0:d} {1:d} {1:d} {2}\n'
+FST_TEMPLATE = u'{0:d} {1:d} {2} {3}\n'
 FST_WEIGHTED_TEMPLATE = u'{0:d} {1:d} {2} {3} {4:f}\n'
-WORD_SYMB_TEMPLATE = u'{0} {1:d}\n'
-NUM_SYMB_TEMPLATE = u'{0:d} {0:d}\n'
+SYMB_TEMPLATE = u'{0} {1:d}\n'
 
 
 def make_path_name(directory, name, extension):
