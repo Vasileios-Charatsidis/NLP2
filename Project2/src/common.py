@@ -62,6 +62,18 @@ def get_best_derivations(best_fst_fname, best_derivations_fname):
     best_derivations_file.close()
 
 
+def determinize_and_minimize(fst_bin_fname):
+    # fstrmepsilon in | fstdeterminize | fstminimize out
+    fst_no_eps_fname = fst_bin_fname.replace('bin', 'no_eps')
+    subprocess.call(['fstrmepsilon', fst_bin_fname, fst_no_eps_fname])
+    fst_det_fname = fst_bin_fname.replace('bin', 'det')
+    subprocess.call(['fstdeterminize', fst_no_eps_fname, fst_det_fname])
+    fst_min_fname = fst_bin_fname.replace('bin', 'min')
+    subprocess.call(['fstminimize', fst_det_fname, fst_min_fname])
+    os.remove(fst_no_eps_fname)
+    os.remove(fst_det_fname)
+
+
 def get_best_derivations_h(best_derivations_fname, best_derivations_h_fname):
     best_derivations_file = open_utf(best_derivations_fname, 'r')
     start_transitions, transitions, finals = read_derivations(best_derivations_file)

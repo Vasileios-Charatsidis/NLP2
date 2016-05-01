@@ -72,8 +72,9 @@ def encode_sentence_permutations(sentence_permutations, output_dir, sentence_no)
     isymb_fname = common.make_path_name(output_dir, 'isymb', sentence_no)
     osymb_fname = common.make_path_name(output_dir, 'osymb', sentence_no)
     write_symbol_files(sentence_vocabulary, isymb_fname, osymb_fname)
-    fst_bin_name = common.make_path_name(output_dir, 'fst_bin', sentence_no)
-    common.make_fst(fst_txt_fname, fst_bin_name, isymb_fname, osymb_fname)
+    fst_bin_fname = common.make_path_name(output_dir, 'fst_bin', sentence_no)
+    common.make_fst(fst_txt_fname, fst_bin_fname, isymb_fname, osymb_fname)
+    common.determinize_and_minimize(fst_bin_fname)
 
 
 def parse_permutation_probability(metainfo):
