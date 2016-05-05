@@ -30,7 +30,7 @@ def process_phrase(fst_file, src_phrase, tgt_phrase, features, weights, state_id
         for tgt_word in tgt_phrase[:-1]:
             fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(state_id, state_id + 1, common.EPSILON, tgt_word, weight))
             state_id += 1
-        fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(state_id, 0, common.EPSILON, tgt_phrase[-1], 0))
+        fst_file.write(common.FST_WEIGHTED_TEMPLATE.format(state_id, 0, common.EPSILON, tgt_phrase[-1], weight))
         state_id += 1
     return state_id
 

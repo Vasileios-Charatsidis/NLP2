@@ -1,6 +1,7 @@
 import sys
 import os
 import string
+import math
 import common
 
 error = 'Usage: make_permuations_fsts.py permutations_file output_dir sentence_count'
@@ -18,7 +19,7 @@ def write_permutation(fst_txt_file, permutation, permuted_words, prob, start_sta
         next_state += 1
     index = permutation[-1]
     word = permuted_words[-1]
-    fst_txt_file.write(common.FST_WEIGHTED_TEMPLATE.format(next_state - 1, next_state, str(index), word, prob))
+    fst_txt_file.write(common.FST_WEIGHTED_TEMPLATE.format(next_state - 1, next_state, str(index), word, -math.log(prob)))
     fst_txt_file.write(str(next_state) + '\n')
     return next_state + 1
 
@@ -116,3 +117,5 @@ if __name__ == '__main__':
         permutation = map(lambda x: int(x), line[2].strip(string.whitespace).split())
         permuted_words = line[3].strip(string.whitespace).split()
         sentence_permutations.append((permutation_prob, permutation, permuted_words))
+    # for the last one, which was just collected, but not written
+    encode_sentence_permutations(sentence_permutations, output_dir, sentence_no)

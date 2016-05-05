@@ -63,15 +63,21 @@ def get_best_derivations(best_fst_fname, best_derivations_fname):
 
 
 def determinize_and_minimize(fst_bin_fname):
-    # fstrmepsilon in | fstdeterminize | fstminimize out
+    # fstrmepsilon in | fstdeterminize | fstpush --push_weights=true | fstminimize | fsttopsort out
     fst_no_eps_fname = fst_bin_fname.replace('bin', 'no_eps')
     subprocess.call(['fstrmepsilon', fst_bin_fname, fst_no_eps_fname])
     fst_det_fname = fst_bin_fname.replace('bin', 'det')
     subprocess.call(['fstdeterminize', fst_no_eps_fname, fst_det_fname])
-    fst_min_fname = fst_bin_fname.replace('bin', 'min')
-    subprocess.call(['fstminimize', fst_det_fname, fst_min_fname])
+    fst_pushed_fname = fst_bin_fname.replace('bin', 'pushed')
+    subprocess.call(['fstpush', '--push_weights=true', fst_det_fname, fst_pushed_fname])
+    fst_min_fname = fst_bin_fname.replace('bin', 'min_unsorted')
+    subprocess.call(['fstminimize', fst_pushed_fname, fst_min_fname])
+    fst_sorted_fname = fst_bin_fname.replace('bin', 'min')
+    subprocess.call(['fsttopsort', fst_min_fname, fst_sorted_fname])
     os.remove(fst_no_eps_fname)
+    os.remove(fst_pushed_fname)
     os.remove(fst_det_fname)
+    os.remove(fst_min_fname)
 
 
 def get_best_derivations_h(best_derivations_fname, best_derivations_h_fname):
