@@ -4,10 +4,10 @@ import string
 import math
 import common
 
-error = 'Usage: make_permuations_fsts.py permutations_file output_dir sentence_count'
+error = 'Usage: make_permuations_fsts.py permutations_file weights_file output_dir sentence_count'
 
 
-def write_permutation(fst_txt_file, permutation, permuted_words, prob, start_state, next_state):
+def write_permutation(fst_txt_file, permutation, permuted_words, prob, weight, start_state, next_state):
     assert(len(permutation) == len(permuted_words))
     first = True
     for index, word in zip(permutation, permuted_words)[:-1]:
@@ -19,7 +19,7 @@ def write_permutation(fst_txt_file, permutation, permuted_words, prob, start_sta
         next_state += 1
     index = permutation[-1]
     word = permuted_words[-1]
-    fst_txt_file.write(common.FST_WEIGHTED_TEMPLATE.format(next_state - 1, next_state, str(index), word, -math.log(prob)))
+    fst_txt_file.write(common.FST_WEIGHTED_TEMPLATE.format(next_state - 1, next_state, str(index), word, -math.log(prob)*weight))
     fst_txt_file.write(str(next_state) + '\n')
     return next_state + 1
 
@@ -57,7 +57,7 @@ def write_symbol_files(vocab, isymb_fname, osymb_fname):
     write_symbol_file(outsymbols, osymb_fname)
 
 
-def encode_sentence_permutations(sentence_permutations, output_dir, sentence_no):
+def encode_sentence_permutations(sentence_permutations, weight, output_dir, sentence_no):
     # sentence_permuations is a list of triples: (prob, permutation, permuted_words)
     # if empty => nothing to do
     if not sentence_permutations:
@@ -67,7 +67,7 @@ def encode_sentence_permutations(sentence_permutations, output_dir, sentence_no)
     fst_txt_fname = common.make_path_name(output_dir, 'fst_txt', sentence_no)
     fst_txt_file = common.open_utf(fst_txt_fname, 'w')
     for permutation in sentence_permutations:
-        next_state = write_permutation(fst_txt_file, permutation[1], permutation[2], permutation[0], start_state, next_state)
+        next_state = write_permutation(fst_txt_file, permutation[1], permutation[2], permutation[0], weight, start_state, next_state)
     fst_txt_file.close()
     sentence_vocabulary = extract_vocabulary(sentence_permutations[0][1], sentence_permutations[0][2])
     isymb_fname = common.make_path_name(output_dir, 'isymb', sentence_no)
@@ -82,24 +82,39 @@ def parse_permutation_probability(metainfo):
     metainfo = metainfo.strip(string.whitespace).split()
     for feature in metainfo:
         feat = feature.split('=')
+        if len(feat) < 2:
+            continue
         if 'prob' == feat[0]:
             return float(feat[1])
     # Must have found prob in metainfo
     assert False
 
 
+def get_lattice_weight(weights_fname):
+    weights_file = common.open_utf(weights_fname, 'r')
+    for line in weights_file:
+        line = line.strip(string.whitespace).split()
+        if len(line) < 2:
+            continue
+        if 'LatticeCost' == line[0]:
+            weights_file.close()
+            return float(line[1])
+    assert False
+
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print error
         sys.exit()
 
     permutations_fname = sys.argv[1]
-    output_dir = sys.argv[2]
-    sentence_count = int(sys.argv[3])
+    weights_fname = sys.argv[2]
+    output_dir = sys.argv[3]
+    sentence_count = int(sys.argv[4])
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    lattice_weight = get_lattice_weight(weights_fname)
     permutations_file = common.open_utf(permutations_fname, 'r')
     sentence_no = None
     sentence_permutations = list()
@@ -108,7 +123,7 @@ if __name__ == '__main__':
         if len(line) < 4:
             continue
         if sentence_no is not None and sentence_no != int(line[0]):
-            encode_sentence_permutations(sentence_permutations, output_dir, sentence_no)
+            encode_sentence_permutations(sentence_permutations, lattice_weight, output_dir, sentence_no)
             sentence_permutations = list()
         sentence_no = int(line[0])
         if sentence_no == sentence_count:
@@ -117,5 +132,5 @@ if __name__ == '__main__':
         permutation = map(lambda x: int(x), line[2].strip(string.whitespace).split())
         permuted_words = line[3].strip(string.whitespace).split()
         sentence_permutations.append((permutation_prob, permutation, permuted_words))
-    # for the last one, which was just collected, but not written
-    encode_sentence_permutations(sentence_permutations, output_dir, sentence_no)
+    # for the last one (in sentence_count wasn't reached), which was just collected, but not written
+    encode_sentence_permutations(sentence_permutations, lattice_weight, output_dir, sentence_no)
