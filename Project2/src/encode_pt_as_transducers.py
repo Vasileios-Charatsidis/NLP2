@@ -116,6 +116,7 @@ def process_setence(sentence_str, pt_fname, weights, sentence_no, output_dir):
     write_fst_file(phrases, unknown_words, weights, fst_fname)
     # Compile text files in binary fst
     common.make_fst(fst_fname, fst_bin_name, isymb_fname, osymb_fname)
+    common.sort_fst_arcs(fst_bin_name, 'ilabel')
 
 
 def read_weights(weights_fname):

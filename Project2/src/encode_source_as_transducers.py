@@ -34,6 +34,7 @@ def create_fst_binary(sentence, sentence_no, output_dir):
     osymb_txt.close()
     # Compile text files in binary fst
     common.make_fst(fst_txt_name, fst_bin_name, isymb_txt_name, osymb_txt_name)
+    common.sort_fst_arcs(fst_bin_name, 'olabel')
 
 
 if __name__ == '__main__':

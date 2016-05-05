@@ -17,7 +17,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    derivations_fnames = common.list_filter_sort_filenames(derivations_dir, lambda f: f.rfind('derivations') > 0)
+    derivations_fnames = common.list_filter_sort_filenames(derivations_dir, lambda f: f.rfind('derivations.') > 0)
 
     best_translations = common.open_utf(os.path.join(output_dir, 'monotone.trans'), 'w')
     best_derivations = common.open_utf(os.path.join(output_dir, 'monotone.der'), 'w')

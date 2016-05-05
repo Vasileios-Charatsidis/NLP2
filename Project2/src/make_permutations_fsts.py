@@ -76,6 +76,7 @@ def encode_sentence_permutations(sentence_permutations, weight, output_dir, sent
     fst_bin_fname = common.make_path_name(output_dir, 'fst_bin', sentence_no)
     common.make_fst(fst_txt_fname, fst_bin_fname, isymb_fname, osymb_fname)
     common.determinize_and_minimize(fst_bin_fname)
+    common.sort_fst_arcs(fst_bin_fname, 'olabel')
 
 
 def parse_permutation_probability(metainfo):
@@ -100,6 +101,7 @@ def get_lattice_weight(weights_fname):
             weights_file.close()
             return float(line[1])
     assert False
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 5:

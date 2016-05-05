@@ -40,6 +40,13 @@ def make_fst(fst_txt, fst_bin, isymb, osymb):
     subprocess.call(callee)
 
 
+def sort_fst_arcs(fst_bin_name, sort_type):
+    fst_temp_fname = fst_bin_name + '.temp'
+    subprocess.call(['fstarcsort', '--sort_type='+sort_type, fst_bin_name, fst_temp_fname])
+    os.remove(fst_bin_name)
+    os.rename(fst_temp_fname, fst_bin_name)
+
+
 def compose_fsts(first, second, output):
     # fstcompose first second output
     callee = ['fstcompose', first, second, output]
@@ -70,14 +77,15 @@ def determinize_and_minimize(fst_bin_fname):
     subprocess.call(['fstdeterminize', fst_no_eps_fname, fst_det_fname])
     fst_pushed_fname = fst_bin_fname.replace('bin', 'pushed')
     subprocess.call(['fstpush', '--push_weights=true', fst_det_fname, fst_pushed_fname])
-    fst_min_fname = fst_bin_fname.replace('bin', 'min_unsorted')
+    fst_min_fname = fst_bin_fname.replace('bin', 'min')
     subprocess.call(['fstminimize', fst_pushed_fname, fst_min_fname])
-    fst_sorted_fname = fst_bin_fname.replace('bin', 'min')
-    subprocess.call(['fsttopsort', fst_min_fname, fst_sorted_fname])
+    os.remove(fst_bin_fname)
+    subprocess.call(['fsttopsort', fst_min_fname, fst_bin_fname])
     os.remove(fst_no_eps_fname)
     os.remove(fst_pushed_fname)
     os.remove(fst_det_fname)
     os.remove(fst_min_fname)
+
 
 
 def get_best_derivations_h(best_derivations_fname, best_derivations_h_fname):
