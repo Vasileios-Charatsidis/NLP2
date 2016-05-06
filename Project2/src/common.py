@@ -18,6 +18,23 @@ def open_utf(fname, mode):
     return codecs.open(fname, mode, encoding='utf8')
 
 
+def makedir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+
+def list_filter_filenames(folder, filter_func):
+    # Get all files from the dir
+    filenames_all = [os.path.join(folder, f) for f in os.listdir(folder)]
+    # Filter out the ones that are not ordinary files
+    filenames = [f for f in filenames_all if filter_func(f)]
+    # Sort them based on corresponding sentence number (which is extension)
+    filenames_dict = dict()
+    for filename in filenames:
+        filenames_dict[int(filename[filename.rfind('.') + 1:])] = filename
+    return filenames_dict
+
+
 def list_filter_sort_filenames(folder, filter_func):
     # Get all files from the dir
     filenames_all = [os.path.join(folder, f) for f in os.listdir(folder)]
@@ -61,14 +78,6 @@ def get_best_fst(output_fst_fname, best_fst_fname, derivations_count):
     best_fst_file.close()
 
 
-def get_best_derivations(best_fst_fname, best_derivations_fname):
-    # fstprint fst > text_fst
-    callee = ['fstprint', best_fst_fname]
-    best_derivations_file = open_utf(best_derivations_fname, 'w')
-    subprocess.call(callee, stdout=best_derivations_file)
-    best_derivations_file.close()
-
-
 def determinize_and_minimize(fst_bin_fname):
     # fstrmepsilon in | fstdeterminize | fstpush --push_weights=true | fstminimize | fsttopsort out
     fst_no_eps_fname = fst_bin_fname.replace('bin', 'no_eps')
@@ -86,6 +95,13 @@ def determinize_and_minimize(fst_bin_fname):
     os.remove(fst_det_fname)
     os.remove(fst_min_fname)
 
+
+def get_best_derivations(best_fst_fname, best_derivations_fname):
+    # fstprint fst > text_fst
+    callee = ['fstprint', best_fst_fname]
+    best_derivations_file = open_utf(best_derivations_fname, 'w')
+    subprocess.call(callee, stdout=best_derivations_file)
+    best_derivations_file.close()
 
 
 def get_best_derivations_h(best_derivations_fname, best_derivations_h_fname):
@@ -140,9 +156,9 @@ def get_translation(start_transition, transitions, finals, aligned=False):
     while next_state not in finals:
         phrase, next_state, cost = get_next_phrase(next_state, transitions, aligned)
         sentence += phrase
-        if next_state not in finals:
-            sentence += ' '
         sentence_cost += cost
+        if next_state not in finals and phrase != '':
+            sentence += ' '
     return sentence, sentence_cost
 
 
@@ -185,6 +201,9 @@ def get_next_phrase(next_state, transitions, aligned):
             break
     if aligned:
         phrase += '|{0}-{1}|'.format(align_start, align_end)
+    else:
+        assert(' ' == phrase[-1])
+        phrase = phrase[:-1]
     return phrase, next_state, cost
 
 
@@ -208,6 +227,7 @@ def get_best_translation_with_best_derivation(best_derivations_fname):
         derivations = translations[translation]
         cost = reduce(lambda d1, d2: d1[0] + d2[0], derivations)
         if best_cost is None or best_cost > cost:
+            best_cost = cost
             best_translation = translation
             best_tr_derivation = None
             best_der_cost = None
