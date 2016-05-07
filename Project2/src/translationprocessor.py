@@ -93,6 +93,13 @@ def make_translation_fsts(sentences_fsts_dir, phrase_table_fsts_dir, translation
         openfstio.get_best_derivations_h(best_derivations_fname, best_derivations_h_fname)
 
 
+def remove_alignments(derivation):
+    words = derivation.split('|')[0::2]
+    words = map(lambda word: word if 0 == len(word) or word[0] != ' ' else word[1:], words)
+    translation = ''.join(words)
+    return translation.strip()
+
+
 def get_best_translation_with_best_derivation(best_derivations_fname):
     best_derivations_file = common.open_utf(best_derivations_fname, 'r')
     start_transitions, transitions, finals = openfstio.read_derivations(best_derivations_file)
@@ -107,21 +114,21 @@ def get_best_translation_with_best_derivation(best_derivations_fname):
             translations[translation] = list()
         translations[translation].append((cost, derivation))
     best_translation = None
+    best_translation_cost = None
     best_derivation = None
-    best_cost = None
+    best_derivation_cost = None
     for translation in translations:
         derivations = translations[translation]
-        cost = reduce(lambda d1, d2: d1[0] + d2[0], derivations)
-        if best_cost is None or best_cost > cost:
-            best_cost = cost
+        translation_cost = 0
+        for derivation in derivations:
+            translation_cost += derivation[0]
+            if best_derivation_cost is None or best_derivation_cost > derivation[0]:
+                best_derivation_cost = derivation[0]
+                best_derivation = derivation[1]
+        if best_translation_cost is None or best_translation_cost > translation_cost:
+            best_translation_cost = translation_cost
             best_translation = translation
-            best_tr_derivation = None
-            best_der_cost = None
-            for derivation in derivations:
-                if best_der_cost is None or best_der_cost > derivation[0]:
-                    best_der_cost = derivation[0]
-                    best_tr_derivation = derivation[1]
-            best_derivation = best_tr_derivation
+    best_derivation = remove_alignments(best_derivation)
     return best_translation, best_derivation
 
 
